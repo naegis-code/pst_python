@@ -17,7 +17,7 @@ table_soh_update = 'soh_update'
 path = Path('D:/Users/prthanap/Downloads') / file  # Correct way to join paths using Path
 df = pd.read_csv(path, encoding='cp874')
 df.columns = df.columns.str.lower()
-df = df.applymap(lambda x: x.strip("'") if isinstance(x, str) else x)
+df = df.map(lambda x: x.strip("'") if isinstance(x, str) else x)
 
 print(f"Running {table} at {timestamp} with {len(df)} rows")
 
@@ -67,10 +67,6 @@ try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
     
-    # ลบไฟล์หลังจากนำเข้าข้อมูลสำเร็จ
-    os.remove(path)
-    print("🗑️ File deleted:", path)
-
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)

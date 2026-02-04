@@ -59,7 +59,7 @@ for chunk in tqdm(
     chunk.columns = chunk.columns.str.lower()
 
     # strip ' only on object columns
-    obj_cols = chunk.select_dtypes(include=['object']).columns
+    obj_cols = chunk.select_dtypes(include=['object', 'string']).columns
     chunk[obj_cols] = chunk[obj_cols].apply(lambda col: col.str.strip("'"))
 
     chunk.to_sql(table, engine2, if_exists='append', index=False)
@@ -89,10 +89,6 @@ df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_on
 try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
-    
-    # ลบไฟล์หลังจากนำเข้าข้อมูลสำเร็จ
-    os.remove(path)
-    print("🗑️ File deleted:", path)
 
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")

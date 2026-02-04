@@ -81,7 +81,6 @@ try:
     df.to_sql(table_soh_update, con=engine, if_exists='append', index=False)
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data imported to database successfully at {timestamp}")
-    os.remove(path)
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)

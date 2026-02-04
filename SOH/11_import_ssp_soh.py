@@ -53,13 +53,12 @@ except SQLAlchemyError as e:
 	print(f"Database error occurred: {e}")
 except Exception as e:
 	print(f"An unexpected error occurred: {e}")
-      
 
 df['soh'] = pd.to_numeric(df['soh'], errors='coerce') # Convert to float, invalid entries become NaN
 df = df[df['soh'] > 0]
 #df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
 
-keep_columns = ["store", "sku_t", "as_of_date", "soh"]
+keep_columns = ["store", "sku_t","vendor", "as_of_date", "soh"]
 df = df[keep_columns]
 df.rename(columns={"store": "stcode", "as_of_date": "DATE"}, inplace=True)
 df['bu'] = bu # Set the business unit
@@ -67,25 +66,21 @@ df['code'] = df['bu'] + df['stcode']
 df['DATE'] = '20' + df['DATE']
 
 df['food_credit'] = df['soh'].where(df['sku_t'] == '01', 0)
-df['nonfood_consign'] = df['soh'].where(df['sku_t'] == '02', 0)
+df['nonfood_consign'] = df['soh'].where((df['sku_t'] == '02') & (df['vendor'] == '91638'), 0)
 df['perishable_nonmer'] = df['soh'].where(df['sku_t'] == '03', 0)
 
 # totalsoh is only for '01' and '03'
-df['totalsoh'] = df['soh'].where(df['sku_t'].isin(['01']), 0)
+df['totalsoh'] = df['food_credit'] + df['nonfood_consign'] + df['perishable_nonmer']
 
-# Drop original msstoh if no longer needed
-df.drop('soh', axis=1, inplace=True)
+df =df.drop(columns=['sku_t','vendor','soh'])
 
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
+print(df)
 
 engine = create_engine(db_url_pstdb)
 try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
-    
-    # ลบไฟล์หลังจากนำเข้าข้อมูลสำเร็จ
-    os.remove(path)
-    print("🗑️ File deleted:", path)
 
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")

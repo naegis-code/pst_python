@@ -66,7 +66,8 @@ engine = create_engine(db_url_pstdb)
 try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
-    
+    os.rename(path, path.with_suffix('.imported'))
+    print("🗑️ File renamed to:", path.with_suffix('.imported'))
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)

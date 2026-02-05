@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,text
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from tqdm import tqdm
@@ -12,6 +12,7 @@ bu = 'B2S'
 path = pathlib.Path.home() / 'Documents' / 'b2s_soh.csv'
 table = 'b2s_soh'
 table_soh_update = 'soh_update'
+engine = create_engine(db_url_pstdb)
 # Define column names
 column_names = [
     "msstor", "msstrn", "mstrnc", "mstrnd", "mstype", "msvdno", "msvdnm", "msdept",
@@ -56,12 +57,41 @@ except FileNotFoundError:
 except SQLAlchemyError as e:
 	print(f"Database error occurred: {e}")
 except Exception as e:
-	print(f"An unexpected error occurred: {e}")
-      
+	print(f"An unexpected error occurred: {e}")   
+
 
 df['msstoh'] = pd.to_numeric(df['msstoh'], errors='coerce') # Convert to float, invalid entries become NaN
 df = df[df['msstoh'] > 0]
-df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700') &(df['msvdno'] != '530250')]
+#df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700') &(df['msvdno'] != '530250')]
+df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
+
+
+#==============================================================Setp Block Vendors=========================================================
+# Query blocked vendors for 'all' sdpt
+query_block_all = text("""
+                    select veno,sdpt from soh_b2s_block_veno where sdpt = 'all'
+                   """
+)
+df_block_all = pd.read_sql_query(query_block_all, engine)
+# Merge and filter out blocked vendors
+df = df.merge(df_block_all, left_on='msvdno', right_on='veno', how='left', indicator=True)
+# Keep only rows not in blocked vendors
+df = df[df['_merge'] == 'left_only']
+# Drop unnecessary columns
+df.drop(columns=['_merge', 'veno', 'sdpt'], inplace=True)
+
+query_block_sdpt = text("""
+                    select veno,sdpt from soh_b2s_block_veno where sdpt != 'all'
+                   """)
+df_block_sdpt = pd.read_sql_query(query_block_sdpt, engine)
+# Merge and filter out blocked vendors for specific sdpt
+df = df.merge(df_block_sdpt, left_on=['msvdno', 'mssdpt'], right_on=['veno', 'sdpt'], how='left', indicator=True)
+# Keep only rows not in blocked vendors for specific sdpt
+df = df[df['_merge'] == 'left_only']
+# Drop unnecessary columns
+df.drop(columns=['_merge', 'veno', 'sdpt'], inplace=True)
+#==============================================================End Block Vendors=========================================================
+
 
 keep_columns = ["msstor", "mstype", "msasdt", "msstoh"]
 df = df[keep_columns]
@@ -78,12 +108,13 @@ df['perishable_nonmer'] = df['msstoh'].where(df['mstype'] == '03', 0)
 df.rename(columns={"msstoh": "totalsoh"}, inplace=True)
 
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
+print(df)
 
-engine = create_engine(db_url_pstdb)
 try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
-
+    os.rename(path, path.with_suffix('.imported'))
+    print("🗑️ File renamed to:", path.with_suffix('.imported'))
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)

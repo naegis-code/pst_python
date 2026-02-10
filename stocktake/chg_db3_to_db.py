@@ -1,7 +1,7 @@
 import pandas as pd
-from sqlalchemy import create_engine, text
-from tqdm import tqdm
+from sqlalchemy import create_engine,text
 import db_connect
+from tqdm import tqdm
 
 bu = 'chg'
 date_start = '20250101'
@@ -13,58 +13,45 @@ db3 = create_engine(db_connect.db_url_pstdb3)
 
 def var_to_db3(bu, date_start, date_end):
     table = 'var'
-    keys = ['bu', 'stcode', 'cntdate', 'skutype', 'rpname']
-
-    # ===== โหลด key จาก db (ปลายทาง) ครั้งเดียว =====
+    # เตียมข้อมูลจาก db3
+    q_db3 = text(f"""
+    SELECT *
+    FROM {bu}_{table}_this_year
+    where cntdate between '{date_start}' and '{date_end}'
+    """)
+    df_db3 = pd.read_sql(q_db3, db3)
+    
+    # เตียมข้อมูลจาก db
     q_db = f"""
-        SELECT DISTINCT bu, stcode, cntdate, skutype, rpname
-        FROM {bu}_{table}
-        WHERE cntdate BETWEEN '{date_start}' AND '{date_end}'
+    SELECT distinct bu,stcode,cntdate,skutype,rpname
+    FROM {bu}_{table}
+    WHERE cntdate between '{date_start}' and '{date_end}'
     """
     df_db = pd.read_sql(q_db, db)
-    target_index = set(
-        df_db[keys].itertuples(index=False, name=None)
-    )
+    print(df_db.shape)
+    print(df_db.head())
 
-    print(f'🔎 Existing keys : {len(target_index):,}')
+    # Faster anti-join
+    keys = ['bu', 'stcode', 'cntdate', 'skutype', 'rpname']
+    mask = ~df_db3.set_index(keys).index.isin(df_db.set_index(keys).index)
+    df = df_db3[mask].reset_index(drop=True)
 
-    # ===== query ฝั่ง db3 (ต้นทาง) =====
-    q_db3 = f"""
-        SELECT *
-        FROM {bu}_{table}_this_year
-        WHERE cntdate BETWEEN '{date_start}' AND '{date_end}'
-    """
+    # ===== Insert with tqdm =====
+    total = len(df)
 
-    total_inserted = 0
-
-    # ===== stream ทีละ chunk =====
-    for chunk in tqdm(
-        pd.read_sql(q_db3, db3, chunksize=chunksize),
-        desc='📥 Read & Insert',
-        unit='chunk'
-    ):
-        # anti-join ทีละ chunk
-        chunk_keys = list(
-            chunk[keys].itertuples(index=False, name=None)
-        )
-        mask = [k not in target_index for k in chunk_keys]
-        df_new = chunk.loc[mask]
-
-        if not df_new.empty:
-            df_new.to_sql(
+    with tqdm(total=total, desc='🚀 Insert VAR', unit='rows') as pbar:
+        for start in range(0, total, chunksize):
+            end = start + chunksize
+            df.iloc[start:end].to_sql(
                 f'{bu}_{table}',
                 db,
                 if_exists='append',
                 index=False,
-                method='multi'
+                method='multi'   # เร็วขึ้นมาก
             )
-            total_inserted += len(df_new)
+            pbar.update(end - start)
 
-            # update key set กัน insert ซ้ำ
-            target_index.update(
-                df_new[keys].itertuples(index=False, name=None)
-            )
+    print('✅ Insert completed')
 
-    print(f'✅ Insert completed : {total_inserted:,} rows')
-
+    
 var_to_db3(bu, date_start, date_end)

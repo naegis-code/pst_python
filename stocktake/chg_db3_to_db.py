@@ -4,8 +4,9 @@ import db_connect
 from tqdm import tqdm
 
 bu = 'chg'
-date_start = '20250101'
-date_end = '20251231'
+date_start = '20250201'
+date_end = '20250231'
+
 chunksize = 10000
 
 db = create_engine(db_connect.db_url_pstdb)

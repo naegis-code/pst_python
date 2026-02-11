@@ -49,7 +49,7 @@ elif windows:
     pyautogui.press('enter')
     time.sleep(0.5)
     pyautogui.press('f7')
-    time.sleep(0.5)
+    time.sleep(2)
     pyautogui.press('enter')
     time.sleep(0.5)
     pyautogui.press('f1')

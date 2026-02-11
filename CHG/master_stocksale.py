@@ -34,7 +34,7 @@ df = pd.read_csv(filepath, dtype=str,encoding='cp874',encoding_errors='replace')
 df.columns = df.columns.str.strip().str.lower().str.replace("'", '')
 
 # Clean all string data: remove single quotes from all string cells
-df = df.applymap(lambda x: x.replace("'", '') if isinstance(x, str) else x)
+df = df.map(lambda x: x.replace("'", '') if isinstance(x, str) else x)
 
 keep_columns = ['as_of_date','sku_number','prname','brand','model','color','size',
                 'sdept','sdept_name','spcode','sp_name','prtype']

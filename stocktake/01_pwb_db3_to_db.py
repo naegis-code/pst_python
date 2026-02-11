@@ -51,7 +51,7 @@ def var_to_db3(bu, date_start, date_end):
     print('✅ Insert completed')
 
     
-var_to_db3(bu, '20250101', '20251231')
+var_to_db3(bu, '20250101', '20250131')
 var_to_db3(bu, '20250201', '20250231')
 var_to_db3(bu, '20250301', '20250331')
 var_to_db3(bu, '20250401', '20250430')

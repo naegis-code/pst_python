@@ -10,6 +10,7 @@ db = create_engine(db_connect.db_url_pstdb)
 db3 = create_engine(db_connect.db_url_pstdb3)
 
 def var_to_db3(bu, date_start, date_end):
+    print(f'Processing BU: {bu}, Date Range: {date_start} to {date_end}')
     table = 'var'
     # เตียมข้อมูลจาก db3
     q_db3 = text(f"""
@@ -26,8 +27,6 @@ def var_to_db3(bu, date_start, date_end):
     WHERE cntdate between '{date_start}' and '{date_end}'
     """
     df_db = pd.read_sql(q_db, db)
-    print(df_db.shape)
-    print(df_db.head())
 
     # Faster anti-join
     keys = ['bu', 'stcode', 'cntdate', 'skutype', 'rpname']

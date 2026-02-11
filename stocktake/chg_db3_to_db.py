@@ -4,15 +4,15 @@ import db_connect
 from tqdm import tqdm
 
 bu = 'chg'
-date_start = '20250201'
-date_end = '20250231'
+date_start = '20250501'
+date_end = '20250531'
 
 chunksize = 10000
 
 db = create_engine(db_connect.db_url_pstdb)
 db3 = create_engine(db_connect.db_url_pstdb3)
 
-def var_to_db3(bu, date_start, date_end):
+def var_db3_to_db(bu, date_start, date_end):
     table = 'var'
     # เตียมข้อมูลจาก db3
     q_db3 = text(f"""
@@ -52,7 +52,14 @@ def var_to_db3(bu, date_start, date_end):
             )
             pbar.update(end - start)
 
-    print('✅ Insert completed')
+    print(f"✅ Insert completed",bu,"Start Date :",date_start)
 
     
-var_to_db3(bu, date_start, date_end)
+var_db3_to_db('chg', '20250501', '20250531')
+var_db3_to_db('chg', '20250601', '20250631')
+var_db3_to_db('chg', '20250701', '20250731')
+var_db3_to_db('chg', '20250801', '20250831')
+var_db3_to_db('chg', '20250901', '20250931')
+var_db3_to_db('chg', '20251001', '20251031')
+var_db3_to_db('chg', '20251101', '20251131')
+var_db3_to_db('chg', '20251201', '20251231')

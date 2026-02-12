@@ -15,7 +15,7 @@ def var_to_db3(bu, date_start, date_end):
         table = 'var'
         # เตียมข้อมูลจาก db3
         q_db3 = text(f"""
-        SELECT column_name, phycnt_cst, qty_count, phycnt_rtl, dept, sdept, class, sclass, sku, ibc,
+        SELECT phycnt_cst, qty_count, phycnt_rtl, dept, sdept, class, sclass, sku, ibc,
                     sbc, sku_desc, brndname, brnddesc, catalogue, color, size, retail, cost, count_user,
                     cntdate, rpname, skutype, stocktakeid, bu, stcode, username, countname, store, batch
         FROM {bu}_{table}_this_year

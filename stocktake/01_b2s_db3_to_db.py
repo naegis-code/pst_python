@@ -10,8 +10,8 @@ db = create_engine(db_connect.db_url_pstdb)
 db3 = create_engine(db_connect.db_url_pstdb3)
 
 def var_to_db3(bu, date_start, date_end):
+    print(f'Processing BU: {bu}, Date Range: {date_start} to {date_end}')
     try:
-        print(f'Processing BU: {bu}, Date Range: {date_start} to {date_end}')
         table = 'var'
         # เตียมข้อมูลจาก db3
         q_db3 = text(f"""

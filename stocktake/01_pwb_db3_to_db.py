@@ -50,6 +50,17 @@ def var_to_db3(bu, date_start, date_end):
                 pbar.update(end - start)
 
         print('✅ Insert completed')
+
+        query_delete = text(f"""
+        DELETE FROM {bu}_{table}_this_year
+        WHERE cntdate between '{date_start}' and '{date_end}'
+        """)
+        
+        with db3.begin() as conn:
+            conn.execute(query_delete)
+        print('✅ Delete completed in db3')
+
+        
     except Exception as e:
         print(f'❌ Error: {e}')
 

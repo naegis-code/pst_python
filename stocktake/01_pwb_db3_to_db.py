@@ -55,14 +55,15 @@ def var_to_db3(bu, date_start, date_end):
         DELETE FROM {bu}_{table}_this_year
         WHERE cntdate between '{date_start}' and '{date_end}'
         """)
-        
+
         with db3.begin() as conn:
             conn.execute(query_delete)
         print('✅ Delete completed in db3')
-
-        
+        return
+    
     except Exception as e:
         print(f'❌ Error: {e}')
+        return
 
     
 var_to_db3(bu, '20250101', '20250131')

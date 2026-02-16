@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from tqdm import tqdm
 import os
-from db_connect import db_url_pstdb, db_url_pstdb2
+import db_connect
 from sqlalchemy.exc import SQLAlchemyError
 import pathlib
 
@@ -12,7 +12,7 @@ bu = 'B2S'
 path = pathlib.Path.home() / 'Documents' / 'b2s_soh.csv'
 table = 'b2s_soh'
 table_soh_update = 'soh_update'
-engine = create_engine(db_url_pstdb)
+engine_db = create_engine(db_connect.db_url_pstdb)
 # Define column names
 column_names = [
     "msstor", "msstrn", "mstrnc", "mstrnd", "mstype", "msvdno", "msvdnm", "msdept",
@@ -35,20 +35,20 @@ print(f"Running {table} at {timestamp} with {len(df)} rows")
 
 try:
     # Create database connection
-    engine = create_engine(db_url_pstdb2)
-    conn = engine.connect()
+    engine_db2 = create_engine(db_connect.db_url_pstdb2)
+    conn = engine_db2.connect()
     
     # Use chunks for efficient insertion
     chunk_size = 1000  # Adjust based on performance
     total_chunks = len(df) // chunk_size + (1 if len(df) % chunk_size > 0 else 0)
-    
+    '''
     with tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
         for i in range(0, len(df), chunk_size):
             df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
             pbar.update(1)
     
     conn.close()
-    
+    '''
     # Success message
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data {table} imported to database successfully at {timestamp}")
@@ -62,9 +62,8 @@ except Exception as e:
 
 df['msstoh'] = pd.to_numeric(df['msstoh'], errors='coerce') # Convert to float, invalid entries become NaN
 df = df[df['msstoh'] > 0]
-#df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700') &(df['msvdno'] != '530250')]
 df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
-
+print(df.shape)
 
 #==============================================================Setp Block Vendors=========================================================
 # Query blocked vendors for 'all' sdpt
@@ -72,7 +71,9 @@ query_block_all = text("""
                     select veno,sdpt from soh_b2s_block_veno where sdpt = 'all'
                    """
 )
-df_block_all = pd.read_sql_query(query_block_all, engine)
+df_block_all = pd.read_sql(query_block_all, engine_db)
+print(df_block_all.info())
+
 # Merge and filter out blocked vendors
 df = df.merge(df_block_all, left_on='msvdno', right_on='veno', how='left', indicator=True)
 # Keep only rows not in blocked vendors
@@ -80,10 +81,11 @@ df = df[df['_merge'] == 'left_only']
 # Drop unnecessary columns
 df.drop(columns=['_merge', 'veno', 'sdpt'], inplace=True)
 
+
 query_block_sdpt = text("""
                     select veno,sdpt from soh_b2s_block_veno where sdpt != 'all'
                    """)
-df_block_sdpt = pd.read_sql_query(query_block_sdpt, engine)
+df_block_sdpt = pd.read_sql(query_block_sdpt, engine_db)
 # Merge and filter out blocked vendors for specific sdpt
 df = df.merge(df_block_sdpt, left_on=['msvdno', 'mssdpt'], right_on=['veno', 'sdpt'], how='left', indicator=True)
 # Keep only rows not in blocked vendors for specific sdpt
@@ -111,7 +113,7 @@ df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_on
 print(df)
 
 try:
-    df.to_sql(table_soh_update, engine, if_exists='append', index=False)
+    df.to_sql(table_soh_update, engine_db, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
     os.rename(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))

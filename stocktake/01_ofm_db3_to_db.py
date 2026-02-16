@@ -3,7 +3,7 @@ from sqlalchemy import create_engine,text
 import db_connect
 from tqdm import tqdm
 
-bu = 'b2s'
+bu = 'ofm'
 chunksize = 1000
 
 db = create_engine(db_connect.db_url_pstdb)

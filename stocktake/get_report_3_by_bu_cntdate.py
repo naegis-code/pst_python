@@ -7,9 +7,9 @@ import os
 from tqdm import tqdm
 
 reportname = 'Report3'
-bu = 'ssp'
-stcode = '80080'
-countdate = '20251202'
+bu = 'b2s'
+stcode = '50170'
+countdate = '20260212'
 count_date = datetime.strptime(countdate, '%Y%m%d')
 
 

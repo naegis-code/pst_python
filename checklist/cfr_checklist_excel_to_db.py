@@ -13,6 +13,11 @@ filepath = (
 
 bu = 'cfr'
 
+filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=3)
+filter_count_date = filter_count_date.strftime('%Y%m%d')
+
+print(f"Start time for filtering data: {filter_count_date}")
+
 src_path = filepath / 'Shared' / 'Checklists_Online' / 'checklist_raw.xlsx'
 
 connect_db = create_engine(db_connect.db_url_pstdb)
@@ -34,8 +39,13 @@ keep_columns = [
 ]
 df_cfr_v2 = df_cfr_v2[keep_columns]
 
+# Rename columns to match the checklist table
 df_cfr_v2.rename(columns={'ID':'id','Start time':'checkdate','รหัสสาขา':'stcode','วันที่ตรวจนับ':'cntdate'}, inplace=True)
 
+# Filter the DataFrame to include only rows where 'cntdate' is less than or equal to the specified date
+df_cfr_v2 = df_cfr_v2[df_cfr_v2['cntdate'] <= filter_count_date]
+
+# Remove duplicates based on 'stcode' and 'cntdate', keeping the latest entry based on 'id'
 df_cfr_v2 = df_cfr_v2.sort_values(by='id', ascending=False).drop_duplicates(subset=['stcode', 'cntdate'])
 
 # Convert checkdate and cntdate to yyyymmdd format

@@ -1,0 +1,66 @@
+Unexpected error: "['case_lp_date'] not in index"
+Traceback (most recent call last):
+  File "d:\Users\prthanap\Documents\GitHub\pst_python\plan\import_plan2026.py", line 113, in <module>
+    df = df[keepcolumn]
+         ~~^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\frame.py", line 4384, in __getitem__
+    indexer = self.columns._get_indexer_strict(key, "columns")[1]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\indexes\base.py", line 6302, in _get_indexer_strict
+    self._raise_if_missing(keyarr, indexer, axis_name)
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\indexes\base.py", line 6355, in _raise_if_missing
+    raise KeyError(f"{not_found} not in index")
+KeyError: "['case_lp_date'] not in index"
+
+Unexpected error: "['case_lp_date'] not in index"
+Traceback (most recent call last):
+  File "d:\Users\prthanap\Documents\GitHub\pst_python\plan\import_plan2026.py", line 115, in <module>
+    df = df[keepcolumn]
+         ~~^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\frame.py", line 4384, in __getitem__
+    indexer = self.columns._get_indexer_strict(key, "columns")[1]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\indexes\base.py", line 6302, in _get_indexer_strict
+    self._raise_if_missing(keyarr, indexer, axis_name)
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\core\indexes\base.py", line 6355, in _raise_if_missing
+    raise KeyError(f"{not_found} not in index")
+KeyError: "['case_lp_date'] not in index"
+
+Error reading Excel file: [Errno 13] Permission denied: 'D:\\Users\\prthanap\\Central Group\\PST Performance Team - เอกสาร\\Report\\2026\\99 Plan\\Annual Plan 2026 All Update (By Div).xlsx'
+Traceback (most recent call last):
+  File "d:\Users\prthanap\Documents\GitHub\pst_python\plan\import_plan2026.py", line 31, in <module>
+    df = pd.read_excel(path, sheet_name='Annual Plan All Bu 2026', usecols="B:AZ")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 481, in read_excel
+    io = ExcelFile(
+         ^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 1604, in __init__
+    ext = inspect_excel_format(
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 1452, in inspect_excel_format
+    with get_handle(
+         ^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\common.py", line 935, in get_handle
+    handle = open(handle, ioargs.mode)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\Users\\prthanap\\Central Group\\PST Performance Team - เอกสาร\\Report\\2026\\99 Plan\\Annual Plan 2026 All Update (By Div).xlsx'
+
+Unexpected error: [Errno 13] Permission denied: 'D:\\Users\\prthanap\\Central Group\\PST Performance Team - เอกสาร\\Report\\2026\\99 Plan\\Annual Plan 2026 All Update (By Div).xlsx'
+Traceback (most recent call last):
+  File "d:\Users\prthanap\Documents\GitHub\pst_python\plan\import_plan2026.py", line 31, in <module>
+    df = pd.read_excel(path, sheet_name='Annual Plan All Bu 2026', usecols="B:AZ")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 481, in read_excel
+    io = ExcelFile(
+         ^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 1604, in __init__
+    ext = inspect_excel_format(
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\excel\_base.py", line 1452, in inspect_excel_format
+    with get_handle(
+         ^^^^^^^^^^^
+  File "D:\Users\prthanap\AppData\Local\Programs\Python\Python312\Lib\site-packages\pandas\io\common.py", line 935, in get_handle
+    handle = open(handle, ioargs.mode)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\Users\\prthanap\\Central Group\\PST Performance Team - เอกสาร\\Report\\2026\\99 Plan\\Annual Plan 2026 All Update (By Div).xlsx'
+

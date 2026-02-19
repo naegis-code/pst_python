@@ -76,6 +76,7 @@ try:
         'Code For Copy':'code_for_copy'
     }
 
+
     # Select required columns
     keepcolumn = [
         'no', 'bu', 'acronym', 'stcode', 'branch', 'province', 'shub', 'food_soh',
@@ -109,7 +110,8 @@ try:
         log_error(error_message)
         print(error_message)
         raise
-
+    
+    print(df.columns)
     df = df[keepcolumn]
 
     try:

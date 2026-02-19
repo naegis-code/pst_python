@@ -41,14 +41,14 @@ try:
     # Use chunks for efficient insertion
     chunk_size = 1000  # Adjust based on performance
     total_chunks = len(df) // chunk_size + (1 if len(df) % chunk_size > 0 else 0)
-    '''
+    
     with tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
         for i in range(0, len(df), chunk_size):
             df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
             pbar.update(1)
     
     conn.close()
-    '''
+
     # Success message
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data {table} imported to database successfully at {timestamp}")

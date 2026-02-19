@@ -14,6 +14,10 @@ filepath = (
 bu = 'pwb'
 sheet  = 'pwb_v1'
 
+filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=3)
+filter_count_date = filter_count_date.strftime('%Y%m%d')
+print(f"Start time for filtering data: {filter_count_date}")
+
 src_path = filepath / 'Shared' / 'Checklists_Online' / 'checklist_raw.xlsx'
 
 connect_db = create_engine(db_connect.db_url_pstdb)
@@ -55,6 +59,9 @@ df = df.astype(dtype_map)
 df.rename(columns={'ID':'id','Start time':'checkdate','check_date':'cntdate'}, inplace=True)
 
 df = df.sort_values(by='id', ascending=False).drop_duplicates(subset=['stcode', 'cntdate'])
+
+# Filter the DataFrame to include only rows where 'cntdate' is less than or equal to the specified date
+df = df[df['cntdate'] <= filter_count_date]
 
 # Convert checkdate and cntdate to yyyymmdd format
 df['checkdate'] = pd.to_datetime(df['checkdate']).dt.strftime('%Y%m%d')

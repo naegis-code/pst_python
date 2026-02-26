@@ -14,7 +14,7 @@ chg_user = 'HHOOPMKJ'
 chg_pass = 'CHG2026'
 sspwds_server = 'SPHQWHMDB02'
 sspwds_user = 'PRTHANAP'
-sspwds_pass = 'report06'
+sspwds_pass = 'report07'
 b2s_master = 'MMB2SUSR/INV551P1(BHOSTRTPP)'
 b2s_master_bar = 'MMB2SLIB/CYPRC(BHOSTRTPP)'
 

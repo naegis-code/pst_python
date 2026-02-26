@@ -16,6 +16,7 @@ def set_excel_to_powerautomate(wait_time):
     time.sleep(wait_time)
     py.hotkey('ctrl', 'v')
     time.sleep(wait_time)
+    py.press('delete', presses=2)
     py.press('tab', presses=3)
     time.sleep(wait_time)
     py.hotkey('alt', 'tab')
@@ -44,6 +45,12 @@ def set_powerautomate_to_excel(wait_time):
     py.hotkey('ctrl', 'pagedown')
     time.sleep(wait_time)
 
-for _ in range(53):
+def overwrite_fx_all_cell():
+        py.press('f2')
+        time.sleep(0.5)
+        py.press('tab')
+
+for _ in range(35):
     #set_excel_to_powerautomate(0.5)
-    set_powerautomate_to_excel(0.5)
+    #set_powerautomate_to_excel(0.5)
+    overwrite_fx_all_cell()

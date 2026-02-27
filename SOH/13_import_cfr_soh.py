@@ -79,7 +79,7 @@ df.rename(columns={"data_date": "DATE"}, inplace=True)
 try:
     engine = create_engine(db_url_pstdb)
     df.to_sql(table_soh_update, con=engine, if_exists='append', index=False)
-    os.rename(path, path.with_suffix('.imported'))
+    os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data imported to database successfully at {timestamp}")

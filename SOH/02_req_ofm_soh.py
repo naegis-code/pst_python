@@ -49,10 +49,10 @@ if windows:
     time.sleep(2)
     pyautogui.press('enter')
     time.sleep(0.5)
-    pyautogui.press('f1')
+    '''pyautogui.press('f1')
     time.sleep(0.5)
     pyautogui.press('f7')
     time.sleep(0.5)
-    pyautogui.hotkey('alt', 'f4')
+    pyautogui.hotkey('alt', 'f4')'''
 else:
     print("Window not found!")

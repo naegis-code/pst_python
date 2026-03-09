@@ -109,21 +109,6 @@ for file in excel_files:
         df['all scan-outsource'] = df_piece.iloc[0, 1] if df_piece.iloc[0, 1] is not None else 0
         df['qty weight-outsource'] = df_piece.iloc[1, 1] if df_piece.iloc[1, 1] is not None else 0
         df['sku weright-outsource'] = df_piece.iloc[2, 1] if df_piece.iloc[2, 1] is not None else 0
-        '''
-        # Drop original columns (optional)
-        df_piece = df_piece.drop(columns=[11, 12])
-
-        # Reset index to a single summary row
-        df_piece = df_piece.iloc[[0]].reset_index(drop=True)
-
-        # Add the new columns to the main dataframe and fill down their values
-        df['all scan-pst'] = df_piece['all scan-pst'].iloc[0]
-        df['qty weight-pst'] = df_piece['qty weight-pst'].iloc[0]
-        df['sku weright-pst'] = df_piece['sku weright-pst'].iloc[0]
-        df['all scan-outsource'] = df_piece['all scan-outsource'].iloc[0]
-        df['qty weight-outsource'] = df_piece['qty weight-outsource'].iloc[0]
-        df['sku weright-outsource'] = df_piece['sku weright-outsource'].iloc[0]
-        '''
 
         # Remove duplicate rows based on all columns except index
         df = df.drop_duplicates()

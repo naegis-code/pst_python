@@ -4,7 +4,7 @@ import db_connect
 from sqlalchemy.exc import SQLAlchemyError
 
 # Settings
-employee_code = '20353085'
+employee_code = '20391748'
 end = '2026-12-31'
 
 table = 'empdate'
@@ -16,19 +16,19 @@ engine = create_engine(db_connect.db_url_pstdb)
 query = text(f"""
     SELECT employee_code, sub_hub AS hub, position, first_work_date 
     FROM employees 
-    WHERE last_work_date > '{end}'
-        or last_work_date IS NULL
+    WHERE (last_work_date > '{end}' 
+        or last_work_date IS NULL)
+        AND employee_code = '{employee_code}'
 """)
 
 query_result  = text(f"""
     SELECT * 
     FROM {table}
-    WHERE last_work_date > '{end}' AND employee_code = '{employee_code}'
+    WHERE employee_code = '{employee_code}'
 """)
 
 df_emp = pd.read_sql_query(query, con=engine)
 df_emp_existing = pd.read_sql_query(query_result, con=engine)
-
 
 # Get start date
 default_start = '2026-01-01'
@@ -46,6 +46,7 @@ df = pd.DataFrame({
 # Merge hub and position
 df = df.merge(df_emp[['employee_code', 'hub', 'position']], on='employee_code', how='left')
 
+
 # Convert date to string
 df['date'] = df['date'].astype(str)
 
@@ -54,6 +55,7 @@ df = df.merge(df_emp_existing[['employee_code','date', 'hub', 'position']], on=[
 # Check for existing records
 df = df[df['hub_existing'].isna()]
 df = df.drop(columns=['hub_existing', 'position_existing'])
+
 
 # Insert into database
 try:

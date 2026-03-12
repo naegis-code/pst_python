@@ -10,6 +10,7 @@ yesterday = (datetime.now() - timedelta(days=1)).strftime('%d%m%y')
 
 time.sleep(2)
 pg.write(pwb_url)
+time.sleep(1)
 pg.press('enter')
 pg.sleep(2)
 pg.write(pwb_user)

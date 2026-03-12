@@ -13,7 +13,7 @@ filepath = (
 
 bu = 'cfr'
 
-filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=3)
+filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=1)
 filter_count_date = filter_count_date.strftime('%Y%m%d')
 
 print(f"Start time for filtering data: {filter_count_date}")

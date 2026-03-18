@@ -5,18 +5,15 @@ import datetime
 
 print("Start : ",datetime.datetime.now())
 
-date_start_manual = '20250101'
-date_end_manual = '20251231'
+date_start_manual = '20260101'
+date_end_manual = '20260228'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
 date_start = date_start_manual
 date_end = date_end_manual
 
-
-
 print(f"Processing Missrate Store Data from {date_start} to {date_end}")
-
 
 table = 'missrate_store'
 table_view = 'missrate_net'
@@ -34,8 +31,6 @@ query_missrate_store = text(f"""
     FROM {table}
     WHERE cntdate BETWEEN to_date('{date_start}', 'YYYYMMDD') AND to_date('{date_end}', 'YYYYMMDD');
     """)
-
-
 
 # Read data from database
 df_query = pd.read_sql(query, engine)

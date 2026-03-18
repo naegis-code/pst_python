@@ -55,8 +55,21 @@ except Exception as e:
 	print(f"An unexpected error occurred: {e}")
 
 df['soh'] = pd.to_numeric(df['soh'], errors='coerce') # Convert to float, invalid entries become NaN
+
+df_record = df.copy()  # Keep a copy of the original DataFrame for reference
+df_record['bu'] = bu # Set the business unit for the record DataFrame
+df_record['as_date'] = '20' + df_record['as_of_date']  # Convert date to proper format
+df_record = df_record.groupby(["bu", "as_date","store"], as_index=False).agg({
+      'soh': 'sum',
+      'sku': 'count'
+      })
+df_record.rename(columns={'store': 'stcode','sku': 'record'}, inplace=True)
+
+df_record.to_sql('check_record', create_engine(db_url_pstdb2), if_exists='append', index=False)
+
+print(f"✅ Record data inserted into 'check_record' at {timestamp}")
+
 df = df[df['soh'] > 0]
-#df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
 
 keep_columns = ["store", "sku_t","vendor", "as_of_date", "soh"]
 df = df[keep_columns]
@@ -75,7 +88,6 @@ df['totalsoh'] = df['food_credit'] + df['nonfood_consign'] + df['perishable_nonm
 df =df.drop(columns=['sku_t','vendor','soh'])
 
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
-print(df)
 
 engine = create_engine(db_url_pstdb)
 try:

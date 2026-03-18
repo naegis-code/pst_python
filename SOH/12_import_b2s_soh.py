@@ -61,6 +61,20 @@ except Exception as e:
 
 
 df['msstoh'] = pd.to_numeric(df['msstoh'], errors='coerce') # Convert to float, invalid entries become NaN
+
+df_record = df.copy()  # Keep a copy of the original DataFrame for reference
+df_record['bu'] = bu # Set the business unit for the record DataFrame
+df_record['as_date'] = '20' + df_record['msasdt']  # Convert date to proper format
+df_record = df_record.groupby(["bu", "as_date","msstor"], as_index=False).agg({
+      'msstoh': 'sum',
+      'mssku': 'count'
+      })
+df_record.rename(columns={'msstoh': 'soh','msstor': 'stcode','mssku': 'record'}, inplace=True)
+
+df_record.to_sql('check_record', engine_db2, if_exists='append', index=False)
+
+print(f"✅ Record data inserted into 'check_record' at {timestamp}")
+
 df = df[df['msstoh'] > 0]
 df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
 print(df.shape)

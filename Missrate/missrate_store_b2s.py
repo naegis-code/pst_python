@@ -78,9 +78,9 @@ df[['first', 'final', 'rec']] = df[['first', 'final', 'rec']].fillna(0)
 
 # คำนวณ missrate ตามเงื่อนไขที่กำหนด
 df['missrate'] = np.where(
-    df['first'] == df['final'],          # เงื่อนไข
-    (df['final'] - df['first']).abs(),   # ถ้า True (first == final)
-    (df['final'] - df['first'] - df['rec']).abs()  # ถ้า False (first != final)
+    df['first'] < df['final'],          # เงื่อนไข
+    (df['first'] + df['rec'] - df['final']).abs(),   # ถ้า True (first < final)
+    (df['first'] - df['final']).abs()  # ถ้า False (first >= final)
 )
 df = df.drop(columns=['rec'])
 

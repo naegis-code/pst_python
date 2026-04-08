@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 import user_pass as up
 
-program = "SSP"  # Options: "SSP", "B2S", "OFM"
+program = "OFM"  # Options: "SSP", "B2S", "OFM"
 
 # username and password selection based on program
 if program == "SSP":

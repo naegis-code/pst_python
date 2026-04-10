@@ -4,8 +4,8 @@ import shutil
 from datetime import datetime, timedelta
 
 # Set the time threshold in hours
-stcode = '208'
-cntdate = '20260318'
+stcode = '207'
+cntdate = '20260328'
 cntdate_threshold = pd.to_datetime(cntdate, errors='coerce')
 
 user_path = pathlib.Path.home()

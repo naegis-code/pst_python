@@ -69,6 +69,8 @@ for file in excel_files:
         del_stcode = df['stcode'].iloc[0]
         del_cntdate = df['cntdate'].iloc[0]
 
+        print(df)
+
         # Prepare safe delete query
         del_query = text(f"""
             DELETE FROM {table} 

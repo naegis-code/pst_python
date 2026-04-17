@@ -50,7 +50,7 @@ engine = create_engine(db_connection_str)
 # คำนวณจำนวนรอบที่จะ insert
 total_rows = len(df)
 num_chunks = math.ceil(total_rows / chunksize)
-'''
+
 with engine.begin() as conn:
     conn.execute(text("DELETE FROM b2s_master"))
     print("✅ Existing data cleared from b2s_master table.")
@@ -65,11 +65,12 @@ with engine.begin() as conn:
             method='multi'
         )
     conn.close()
-'''
+
 print(df.shape)
+print(df.head())
 print("✅ Data imported to database successfully.")
 
-
+'''
 #sku,upc,des,price,dept
 
 keep_columns = ["sku_no", "ibc","sku_descr", "sbc#1", "sbc#2","sbc#3","sbc#4","sbc#5","org_price", "dept"]
@@ -216,3 +217,4 @@ print("Inserting data to b2s_master_bar table start :"+datetime.now().strftime("
 df_master_bar.to_sql('b2s_master_bar',engine,if_exists='append',method='multi',index=False)
 
 print("✅ Data imported to b2s_master_bar table successfully :"+datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+'''

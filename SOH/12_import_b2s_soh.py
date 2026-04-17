@@ -77,7 +77,6 @@ print(f"✅ Record data inserted into 'check_record' at {timestamp}")
 
 df = df[df['msstoh'] > 0]
 df = df[(df['mssdpt'] != '600') & (df['mssdpt'] != '700')]
-print(df.shape)
 
 #==============================================================Setp Block Vendors=========================================================
 # Query blocked vendors for 'all' sdpt
@@ -86,7 +85,6 @@ query_block_all = text("""
                    """
 )
 df_block_all = pd.read_sql(query_block_all, engine_db)
-print(df_block_all.info())
 
 # Merge and filter out blocked vendors
 df = df.merge(df_block_all, left_on='msvdno', right_on='veno', how='left', indicator=True)
@@ -124,7 +122,6 @@ df['perishable_nonmer'] = df['msstoh'].where(df['mstype'] == '03', 0)
 df.rename(columns={"msstoh": "totalsoh"}, inplace=True)
 
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
-print(df)
 
 try:
     df.to_sql(table_soh_update, engine_db, if_exists='append', index=False)

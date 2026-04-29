@@ -8,7 +8,7 @@ print("Start : ",datetime.datetime.now())
 
 
 date_start_manual = '20260101'
-date_end_manual = '20260331'
+date_end_manual = '20260430'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
@@ -26,7 +26,7 @@ table_bu = f'{bu.lower()}_{table_type.lower()}_this_year'
 table_missrate = 'missrate_store'
 
 query_perparation = text(f"""update b2s_stk_this_year set bu = 'B2S',stcode = store where bu is null""")
-with db3.connect() as conn:
+with db3.begin() as conn:
     conn.execute(query_perparation)
     print("Data preparation completed successfully.")
 

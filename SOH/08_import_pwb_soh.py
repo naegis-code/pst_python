@@ -72,4 +72,3 @@ except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)
     print("⚠️ File was NOT deleted:", path)
-

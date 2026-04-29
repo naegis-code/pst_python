@@ -4,8 +4,8 @@ import db_connect
 from tqdm import tqdm
 from datetime import datetime
 
-date_start = '20250101'
-date_end = '20251231'
+date_start = '20260101'
+date_end = '20260430'
 
 # def stocktake
 def stocktake_upfront_db3_to_db(date_start,date_end, bu):
@@ -269,23 +269,23 @@ def variance_jda_db3_to_db(date_start,date_end,bu):
     except Exception as e:
         print(f"❌ Error connecting or inserting for BU {bu}: {e}")
 
-'''
-stocktake_upfront_db3_to_db(date_start,date_end,'cfw')
-stocktake_upfront_db3_to_db(date_start,date_end,'pwb')
-stocktake_upfront_db3_to_db(date_start,date_end,'chg')
+
+#stocktake_upfront_db3_to_db(date_start,date_end,'cfw')
+#stocktake_upfront_db3_to_db(date_start,date_end,'pwb')
+#stocktake_upfront_db3_to_db(date_start,date_end,'chg')
 
 stocktake_jda_db3_to_db(date_start,date_end,'b2s')
-stocktake_jda_db3_to_db(date_start,date_end,'ofm')
+#stocktake_jda_db3_to_db(date_start,date_end,'ofm')
 
-stocktake_jda_db3_to_db(date_start,date_end,'ssp')
+#stocktake_jda_db3_to_db(date_start,date_end,'ssp')
 
-stocktake_cfr_db3_to_db(date_start,date_end,'cfr')
-'''
+#stocktake_cfr_db3_to_db(date_start,date_end,'cfr')
 
-variance_upfront_db3_to_db(date_start,date_end,'cfw')
-variance_upfront_db3_to_db(date_start,date_end,'pwb')
-variance_upfront_db3_to_db(date_start,date_end,'chg')
+
+#variance_upfront_db3_to_db(date_start,date_end,'cfw')
+#variance_upfront_db3_to_db(date_start,date_end,'pwb')
+#variance_upfront_db3_to_db(date_start,date_end,'chg')
 
 variance_jda_db3_to_db(date_start,date_end,'b2s')
-variance_jda_db3_to_db(date_start,date_end,'ofm')
-variance_jda_db3_to_db(date_start,date_end,'ssp')
+#variance_jda_db3_to_db(date_start,date_end,'ofm')
+#variance_jda_db3_to_db(date_start,date_end,'ssp')

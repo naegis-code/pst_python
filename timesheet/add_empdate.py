@@ -4,7 +4,7 @@ import db_connect
 from sqlalchemy.exc import SQLAlchemyError
 
 # Settings
-employee_code = '20403229'
+employee_code = '20405695'
 end = '2026-12-31'
 
 table = 'empdate'

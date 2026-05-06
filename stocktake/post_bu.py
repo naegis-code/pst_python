@@ -30,6 +30,8 @@ df_holiday['date'] = pd.to_datetime(df_holiday['date'], format='%Y-%m-%d')
 df_4v = df_plan[df_plan['atype'] == '4V']
 df_4v['year'] = df_4v['cntdate'].str[:4]
 df_4v.drop(columns=['acronym','branch','province','shub','type1','size','job_status','post_date','hiring_outsource','outsource_cnt_type','code_for_copy'], inplace=True)
+df_4v = df_4v.sort_values('cntdate', ascending=True)
+df_4v.drop_duplicates(subset=['bu', 'stcode', 'year', 'round'], inplace=True)
 
 df_3F_3Q = df_plan[df_plan['atype'].isin(['3F','3Q'])]
 df_3F_3Q['year'] = df_3F_3Q['cntdate'].str[:4]

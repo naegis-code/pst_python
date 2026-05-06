@@ -13,18 +13,19 @@ path = Path('D:/Users/prthanap/Downloads/cfw_soh.xlsx')
 table = 'cfw_soh'
 table_soh_update = 'soh_update'
 
-dtype_dict = {
-    'MSSTOR': str, 'MSSTRN': str, 'MSTRNC': str, 'MSTRND': str, 'MSTYPE': str, 'MSVDNO': str, 'MSVDNM': str,
-    'MSDEPT': str, 'MSDPTN': str, 'MSSDPT': str, 'MSSDPN': str, 'MSBRND': str, 'MSCLAS': str, 'MSCLSN': str,
-    'MSSCLS': str, 'MSSCLN': str, 'MSSKU': str, 'MSSDES': str, 'MSIBC': str, 'MSSTOH': float, 'MSSTKC': float,
-    'MSPOOR': float, 'MSTOOR': float
-}
-
-df = pd.read_excel(path, engine='openpyxl', dtype=dtype_dict, parse_dates=['MSASDT'])
+df = pd.read_excel(path, engine='openpyxl', dtype=str, parse_dates=['MSASDT'])
 
 df.columns = df.columns.str.lower()
 df['msasdt'] = pd.to_datetime(df['msasdt'], errors='coerce').dt.date
+df['msstoh'] = pd.to_numeric(df['msstoh'], errors='coerce').fillna(0)
+df['msstkc'] = pd.to_numeric(df['msstkc'], errors='coerce').fillna(0)
 
+keep_columns = ['msstor', 'msstrn', 'mstrnc', 'mstrnd', 'mstype', 'msvdno', 'msvdnm', 'msdept', 'msdptn', 'mssdpt',
+                'mssdpn','msbrnd', 'msclas', 'msclsn', 'msscls', 'msscln', 'mssku', 'mssdes', 'msibc', 'msstoh',
+                'msstkc', 'msasdt', 'mspoor', 'mstoor', 'mssbc']
+
+# ข้าม คอลัมน์ที่ไม่อยู่ใน keep_columns
+df = df[[col for col in keep_columns if col in df.columns]]
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 print(f"Running {table} at {timestamp} with {len(df)} rows")
@@ -57,13 +58,18 @@ except Exception as e:
 
 df['msasdt'] = pd.to_datetime(df['msasdt'], format='%Y%m%d', errors='coerce').dt.strftime('%Y%m%d')
 
+# Ensure 'mstype' is treated as a string and fill missing values with '0'
+if 'mstype' not in df.columns:
+    df['mstype'] = '1'
+
+print(df.info())
+
 keep_columns = ["msstor", "mstype", "msasdt", "msstoh"]
 df = df[keep_columns]
 
 df.rename(columns={"msstor": "stcode", "msasdt": "DATE"}, inplace=True)
 df['bu'] = bu # Set the business unit
 df['code'] = df['bu'] + df['stcode']
-
 
 df['food_credit'] = df['msstoh'].where(df['mstype'] == '1', 0)
 df['nonfood_consign'] = df['msstoh'].where(df['mstype'] == '2', 0)
@@ -77,7 +83,7 @@ engine = create_engine(db_url_pstdb)
 try:
     df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
-    os.rename(path, path.with_suffix('.imported'))
+    os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")

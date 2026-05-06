@@ -7,3 +7,4 @@ __pycache__/
 *.txt
 *.csv
 *.log
+stocktake/__pycache__/db_connect.cpython-312.pyc

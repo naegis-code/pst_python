@@ -1,0 +1,35 @@
+import pandas as pd
+from sqlalchemy import create_engine, text
+import db_connect as db
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
+file = "Master_IBC_27.04.26.xlsx"
+path = 'C:\\Users\\shthanapat\\Downloads\\'
+path_file = path + file
+
+df = pd.read_excel(path_file,sheet_name='Sheet1',usecols='A:G',dtype=str)
+
+df.columns = df.columns.str.strip().str.lower()  # ลบช่องว่างที่อาจมีในชื่อคอลัมน์และแปลงเป็นตัวพิมพ์เล็ก
+
+colum_mapping = {
+    'sbc': 'bggs',
+    'ibc (cds)': 'ibc',
+    'sku_descr': 'description'
+}
+
+df = df.rename(columns=colum_mapping)
+
+print(df.shape)
+
+df.drop_duplicates(inplace=True)
+
+print(df.shape)
+
+engine_db3 = create_engine(db.db_url_pstdb3)
+with engine_db3.begin() as connection:
+    connection.execute(text("DELETE FROM central_tham_master"))
+    
+    df.to_sql('central_tham_master', con=connection, if_exists='append', index=False)
+
+    print("Data inserted into central_tham_master successfully." + str(len(df.index)))

@@ -6,9 +6,9 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 bu = 'CentralTham'
-stcode = '10102'
+stcode = '10153'
 atype = '3F'
-cntdate = '20260427'
+cntdate = '20260507'
 
 path_master = 'D:\\Master.db'
 
@@ -34,11 +34,19 @@ params = {
 
 plan = pd.read_sql_query(query_plan, engine_db, params=params)
 
+
 if not plan.empty:
     countName = bu + stcode + atype[-1] + cntdate + '001'
     storeCode = stcode
     branch = plan['branch'].iloc[0]
     storeName = branch
+
+    q_users_pass = text("""
+    SELECT employee_code as username, encryptedpassword, employee_code as empCode
+    FROM employees
+    WHERE last_work_date is null
+                  """)
+    df_users = pd.read_sql_query(q_users_pass, engine_db)
 
     query_get_master = text("""
         SELECT 
@@ -80,9 +88,12 @@ if not plan.empty:
         })
 
         connection.execute(text("DELETE FROM pda_masters"))
+        connection.execute(text("DELETE FROM users"))
         connection.execute(text("DELETE FROM sqlite_sequence WHERE name='pda_masters'"))
+        connection.execute(text("DELETE FROM sqlite_sequence WHERE name='users'"))
 
         df_get_master.to_sql('pda_masters', con=connection, if_exists='append', index=False)
+        df_users.to_sql('users', con=connection, if_exists='append', index=False)
 
         print(f"✅ Inserted {len(df_get_master)} records")
 

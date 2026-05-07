@@ -9,6 +9,7 @@ from pathlib import Path  # Import Path from pathlib
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 timestamp_date = datetime.now().strftime('%Y%m%d')  # Use hyphens for file system safety
+#timestamp_date = '20260506'
 file = f'14_MSTKVAL_{timestamp_date}.csv'  # File name
 
 bu = 'PWB' # Business unit

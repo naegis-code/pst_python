@@ -5,8 +5,8 @@ import shutil
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-bu = 'CentralTham'
-stcode = '22203'
+bu = 'CFR'
+stcode = '017'
 atype = '3F'
 cntdate = '20260508'
 
@@ -36,7 +36,7 @@ plan = pd.read_sql_query(query_plan, engine_db, params=params)
 
 
 if not plan.empty:
-    countName = bu + stcode + atype[-1] + cntdate + '001'
+    stocktakeid = bu + stcode + atype[-1] + cntdate + '001'
     storeCode = stcode
     branch = plan['branch'].iloc[0]
     storeName = branch
@@ -49,22 +49,25 @@ if not plan.empty:
     df_users = pd.read_sql_query(q_users_pass, engine_db)
 
     query_get_master = text("""
-        SELECT 
-            ibc,
-            description as "productName",
-            0 as stock,
-            price as "retailPrice",
-            'A' as status
-        FROM central_tham_master
+    SELECT 
+        barcode as ibc,
+        description as "productName",
+        soh as stock,
+        pack as "packSize",
+        price as "retailPrice",
+        status
+    FROM cfr_master
+    WHERE stocktakeid = :stocktakeid
     """)
 
-    df_get_master = pd.read_sql_query(query_get_master, engine_db3)
+    df_get_master = pd.read_sql_query(query_get_master, engine_db3, params={"stocktakeid": stocktakeid})
+
 
     # 👉 pad barcode ใน pandas (ปลอดภัยทุก DB)
     df_get_master['sku'] = df_get_master['ibc'].astype(str).str.zfill(13)
     df_get_master['barcodeIBC'] = df_get_master['sku']
 
-    df_get_master['stocktakeid'] = countName
+    df_get_master['stocktakeid'] = stocktakeid
     df_get_master['storeCode'] = storeCode
     df_get_master['storeName'] = storeName
 
@@ -80,7 +83,7 @@ if not plan.empty:
                 storeName = :storeName
             WHERE id = 1
         """), {
-            "countName": countName,
+            "countName": stocktakeid,
             "storeCode": storeCode,
             "bu": bu,
             "branch": branch,
@@ -101,10 +104,9 @@ if not plan.empty:
     with engine_master.connect() as conn:
         conn.execute(text("VACUUM"))
 
-    shutil.copy(path_master, f"D:\\{countName}.db")
+    shutil.copy(path_master, f"D:\\{stocktakeid}.db")
 
-    print(f"✅ Master database created: D:\\{countName}.db")
-    print(branch)
-
+    print(f"✅ Master database created: D:\\{stocktakeid}.db")
+    
 else:
     print("No plan found for the given parameters.")

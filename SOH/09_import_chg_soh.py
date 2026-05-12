@@ -11,8 +11,8 @@ import math
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 timestamp_date = datetime.now().strftime('%Y%m%d')  # Use hyphens for file system safety
-timestamp_date_1 = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')  # Previous day
-#timestamp_date = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')  # Previous day
+
+#timestamp_date = '20260506'
 file = f'14_MSTKVAL{timestamp_date}.csv'  # File name
 print("File to be processed:", file)
 

@@ -2,15 +2,20 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 import db_connect as db
 import sys
+import pathlib
 sys.stdout.reconfigure(encoding='utf-8')
 
-stocktakeid = 'CentralTham10102F20260427001'
+stocktakeid = 'CentralTham10153F20260507001'
 
-file = "SOH CDS Chidlom 26-04-26.xlsx"
-path = 'C:\\Users\\shthanapat\\Downloads\\'
-path_file = path + file
+userpath = pathlib.Path.home()
+path = userpath / 'Downloads'
 
-df = pd.read_excel(path_file,sheet_name='Sheet1',usecols='D:E',dtype=str)
+file = "SOH CDS Patong as of 06-05-26.xlsx"
+
+path = userpath / 'Downloads' / file
+path_file = path
+
+df = pd.read_excel(path_file,sheet_name='Sheet1',usecols='A:B',dtype=str)
 
 df.columns = df.columns.str.strip().str.lower()  # ลบช่องว่างที่อาจมีในชื่อคอลัมน์และแปลงเป็นตัวพิมพ์เล็ก
 
@@ -21,16 +26,12 @@ colum_mapping = {
 df = df.rename(columns=colum_mapping)
 df['stocktakeid'] = stocktakeid
 
-print(df.shape)
-
 df.drop_duplicates(inplace=True)
-
-print(df.shape)
-print(df.head())
 
 engine_db3 = create_engine(db.db_url_pstdb3)
 with engine_db3.begin() as connection:
     connection.execute(text("DELETE FROM central_tham_soh_update WHERE stocktakeid = :stocktakeid"), {"stocktakeid": stocktakeid})
+    print(f"Existing records with stocktakeid {stocktakeid} deleted from central_tham_soh_update.")
     
     df.to_sql('central_tham_soh_update', con=connection, if_exists='append', index=False)
 

@@ -6,7 +6,7 @@ import user_pass as up
 import pathlib
 
 userpath = user_path = pathlib.Path.home()
-save_path = userpath / 'Documents' / 'b2s_soh.csv'
+save_path = userpath / 'Downloads' / 'b2s_soh.csv'
 path = r"C:\Program Files (x86)\IBM\Client Access\cwbtf.exe"
 
 os.remove(save_path) if save_path.exists() else None

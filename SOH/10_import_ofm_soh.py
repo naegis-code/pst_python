@@ -10,7 +10,7 @@ import pathlib
 
 
 bu = 'OFM'
-path = pathlib.Path.home() / 'Documents' / 'ofm_soh.csv'
+path = pathlib.Path.home() / 'Downloads' / 'ofm_soh.csv'
 table = 'ofm_soh'
 table_soh_update = 'soh_update'
 # Define column names

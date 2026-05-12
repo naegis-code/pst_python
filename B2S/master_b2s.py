@@ -5,10 +5,10 @@ import shutil
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-bu = 'CentralTham'
-stcode = '22203'
+bu = 'B2S'
+stcode = '50112'
 atype = '3F'
-cntdate = '20260508'
+cntdate = '20250104'
 
 path_master = 'D:\\Master.db'
 
@@ -49,16 +49,25 @@ if not plan.empty:
     df_users = pd.read_sql_query(q_users_pass, engine_db)
 
     query_get_master = text("""
-        SELECT 
-            ibc,
-            description as "productName",
-            0 as stock,
-            price as "retailPrice",
-            'A' as status
-        FROM central_tham_master
+    SELECT 
+        upc as ibc,
+        des as "productName",
+        0 as stock,
+        price as "retailPrice",
+        'A' as status
+    FROM b2s_master_bar
+    union all
+    select distinct 
+        lpad(sku,13,'0') as ibc,
+        des as "productName",
+        0 as stock,
+        price as "retailPrice",
+        'A' as status
+    from b2s_master_bar
     """)
 
     df_get_master = pd.read_sql_query(query_get_master, engine_db3)
+
 
     # 👉 pad barcode ใน pandas (ปลอดภัยทุก DB)
     df_get_master['sku'] = df_get_master['ibc'].astype(str).str.zfill(13)
@@ -104,7 +113,6 @@ if not plan.empty:
     shutil.copy(path_master, f"D:\\{countName}.db")
 
     print(f"✅ Master database created: D:\\{countName}.db")
-    print(branch)
-
+    
 else:
     print("No plan found for the given parameters.")

@@ -11,7 +11,8 @@ from tqdm import tqdm
 # Configuration
 bu = "B2S"
 stcode = "50008"
-cntdate = "031025"  # ddmmyy
+cntdate = "20260310"  # yyyymmdd 
+atype = "3F"   
 
 # -------------------------
 # Utility Functions
@@ -54,7 +55,7 @@ def main():
     # Connections
     engine_db = get_engine(db_connect.db_url_pstdb)
     engine_db3 = get_engine(db_connect.db_url_pstdb3)
-    sqlite_path = r"D:\Program Files\B2S\Apps\pda-master.db"
+    sqlite_path = 'D:\\Master.db'
     engine_sqlite = get_engine(f"sqlite:///{sqlite_path}")
 
     # --- Step 1: Validate store from plan_dba
@@ -150,12 +151,12 @@ def main():
     print(f"✅ pda_masters updated ({len(df_master)} records)")
 
     # --- Step 7: Export DB
-    export_path = pathlib.Path.home() / "Downloads"
+    export_path = 'D:\\'
     timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
-    export_filename = f"pda_masters_{count_name}_{timestamp}.db"
+    export_filename = f"{count_name}.db"
     shutil.copy(sqlite_path, export_path / export_filename)
     print(f"✅ SQLite exported to {export_path / export_filename}")
 
-
+    
 if __name__ == "__main__":
     main()

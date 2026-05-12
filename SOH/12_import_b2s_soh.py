@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import pathlib
 
 bu = 'B2S'
-path = pathlib.Path.home() / 'Documents' / 'b2s_soh.csv'
+path = pathlib.Path.home() / 'Downloads' / 'b2s_soh.csv'
 table = 'b2s_soh'
 table_soh_update = 'soh_update'
 engine_db = create_engine(db_connect.db_url_pstdb)

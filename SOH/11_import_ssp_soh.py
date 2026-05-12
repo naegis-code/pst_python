@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import pathlib
 
 bu = 'SSP'
-path = pathlib.Path.home() / 'Documents' / 'ssp_soh.csv'
+path = pathlib.Path.home() / 'Downloads' / 'ssp_soh.csv'
 table = 'ssp_soh'
 table_soh_update = 'soh_update'
 # Define column names

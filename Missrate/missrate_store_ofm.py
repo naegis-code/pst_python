@@ -7,7 +7,7 @@ print("Start : ",datetime.datetime.now())
 
 
 date_start_manual = '20260101'
-date_end_manual = '20260228'
+date_end_manual = '20260430'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
@@ -23,6 +23,10 @@ bu = 'ofm'
 table_bu = f'{bu.lower()}_var_this_year'
 table_missrate = 'missrate_store'
 
+query_perparation = text(f"""update {table_bu} set bu = '{bu.upper()}',stcode = store where bu is null""")
+with db3.begin() as conn:
+    conn.execute(query_perparation)
+    print("Data preparation completed successfully.")
 
 query = text(f"""
             select store as stcode ,

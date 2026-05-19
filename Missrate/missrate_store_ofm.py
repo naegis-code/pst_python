@@ -7,7 +7,7 @@ print("Start : ",datetime.datetime.now())
 
 
 date_start_manual = '20260101'
-date_end_manual = '20260430'
+date_end_manual = '20261231'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 

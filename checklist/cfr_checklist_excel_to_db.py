@@ -97,7 +97,7 @@ df_cfr_v2 = df_cfr_v2.merge(
     on=['bu', 'stcode', 'cntdate'],
     how='left'
 )
-df_cfr_v2 = df_cfr_v2[df_cfr_v2['branch'].notna()].drop(columns=['branch','question_code','id'], errors='ignore')
+df_cfr_v2 = df_cfr_v2[df_cfr_v2['branch'].notna()].drop(columns=['branch','id'], errors='ignore')
 
 
 # check recheck from checklist table

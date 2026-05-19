@@ -114,7 +114,7 @@ df = df.merge(
     on=['bu', 'stcode', 'cntdate'],
     how='left'
 )
-df = df[df['branch'].notna()].drop(columns=['branch','question_code','id'], errors='ignore')
+df = df[df['branch'].notna()].drop(columns=['branch','id'], errors='ignore')
 
 
 # check recheck from checklist table

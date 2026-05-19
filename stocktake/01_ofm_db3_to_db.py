@@ -65,9 +65,12 @@ def var_to_db(bu, date_start, date_end):
         table = 'var'
         # เตียมข้อมูลจาก db3
         q_db3 = text(f"""
-        SELECT phycnt_cst, qty_count, phycnt_rtl, dept, sdept, class, sclass, sku, ibc,
-                    sbc, sku_desc, brndname, brnddesc, catalogue, color, size, retail, cost, count_user,
-                    cntdate, rpname, skutype, stocktakeid, bu, stcode, username, countname, store, batch
+        SELECT countname,store,batch,dept,sdept
+            ,class,sclass,sku,ibc,sbc
+            ,sku_desc,brndname,brnddesc,catalogue,color
+            ,size,retail,cost,phycnt_rtl,phycnt_cst
+            ,qty_count,count_user,cntdate,rpname,skutype
+            ,bu,stcode,username,stocktakeid
         FROM {bu}_{table}_this_year
         where cntdate between '{date_start}' and '{date_end}'
         """)
@@ -108,7 +111,7 @@ def var_to_db(bu, date_start, date_end):
         print(f'❌ Error: {e}')
         return
 
-'''
+
 #===================VAR====================    
 var_to_db(bu, '20250101', '20250131')
 var_to_db(bu, '20250201', '20250231')
@@ -136,3 +139,4 @@ stk_to_db(bu, '20250901', '20250931')
 stk_to_db(bu, '20251001', '20251031')
 stk_to_db(bu, '20251101', '20251131')
 stk_to_db(bu, '20251201', '20251231')
+'''

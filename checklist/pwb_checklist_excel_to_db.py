@@ -129,7 +129,7 @@ df = df[df['recheck'].isna()].drop(columns=['recheck'], errors='ignore')
 
 # Display the first few rows of the DataFrame
 print(df.shape)
-print(df.head())
+print(df)
 # Insert data into the checklist table
 df.to_sql('checklist', connect_db, if_exists='append', index=False)
 print(f"✅ Data inserted into the checklist table successfully. Total rows inserted: {len(df)}")

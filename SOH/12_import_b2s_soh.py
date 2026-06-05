@@ -17,7 +17,7 @@ engine_db = create_engine(db_connect.db_url_pstdb)
 column_names = [
     "msstor", "msstrn", "mstrnc", "mstrnd", "mstype", "msvdno", "msvdnm", "msdept",
     "msdptn", "mssdpt", "mssdpn", "msbrnd", "msclas", "msclsn", "msscls", "msscln",
-    "mssku", "mssdes", "msibc", "mssbc", "mspopg", "mscatl", "msskus", "msstkr",
+    "mssku", "mss  des", "msibc", "mssbc", "mspopg", "mscatl", "msskus", "msstkr",
     "msstkc", "msstoh", "msregp", "msorgp", "msancp", "msascn", "msasdt", "mspoor",
     "mstoor", "msrtvv", "msrtvi", "msdist", "msobsf", "msmqty", "msage", "msaget",
     "att_nam_1", "att_val_1", "att_desc_1", "att_nam_2", "att_val_2", "att_desc_2",

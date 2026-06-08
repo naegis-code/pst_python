@@ -8,3 +8,4 @@ __pycache__/
 *.csv
 *.log
 stocktake/__pycache__/db_connect.cpython-312.pyc
+.vscode/

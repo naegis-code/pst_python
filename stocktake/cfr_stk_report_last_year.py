@@ -14,11 +14,11 @@ filepath = (
 )
 
 bu = 'CFR'
-sdate = '20260101'
-edate = '20261231'
+sdate = '20250101'
+edate = '20251231'
 
-path_report = filepath / 'Apps' / 'Stocktake' / 'cfr_stk_report.csv'
-path_report_dept = filepath / 'Apps' / 'Stocktake' / 'cfr_stk_report_dept.csv'
+path_report = filepath / 'Apps' / 'Stocktake' / 'cfr_stk_report_last_year.csv'
+path_report_dept = filepath / 'Apps' / 'Stocktake' / 'cfr_stk_report_dept_last_year.csv'
 
 engine = create_engine(db.db_url_pstdb)
 engine3 = create_engine(db.db_url_pstdb3)
@@ -67,12 +67,12 @@ q_report_cfr = text("""
                     sum(case when var_cost < 0 then var_cost else 0 end) as cost_loss,
                     sum(var_retail) as retail_net,
                     sum(var_cost) as cost_net
-                from cfr_stk_this_year csty 
+                from cfr_stk csty 
                 where cntdate between :sdate and :edate
                 group by stcode	,cntdate ,rpname ,skutype
                 """)
 
-df_report_cfr = pd.read_sql(q_report_cfr, engine3, params={'sdate': sdate, 'edate': edate})
+df_report_cfr = pd.read_sql(q_report_cfr, engine, params={'sdate': sdate, 'edate': edate})
 print(f"✅ CFR report data retrieved successfully. Total rows: {len(df_report_cfr)}")
 
 q_report_topscare = text("""

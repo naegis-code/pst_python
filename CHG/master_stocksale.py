@@ -20,7 +20,7 @@ else:
 bu = 'CHG'
 table = 'chg_stocksale_update'
 f_path = filepath / 'CHG' / 'Master' 
-date_stamp = '20260522' 
+date_stamp = '20260615' 
 date_stamp_true = pd.Timestamp.now().strftime('%Y%m%d')
 filepath = f_path / f'StockSales_Summary_{date_stamp}.csv'
 

@@ -1,15 +1,33 @@
-import pandas as pd
+import polars as pl
 from sqlalchemy import create_engine, text
+import pathlib 
+import db_connect as dbc
 
-# Paths to the Excel file
-path1 = r'D:\Users\prthanap\Central Group\PST Performance Team - เอกสาร\Apps\time_sheet_excel.xlsx'
-path2 = r'C:\Users\Administrator\Central Group\PST Performance Team - Documents\Apps\time_sheet_excel.xlsx'
+# Set file path
+user_path = pathlib.Path.home()
+if (user_path / 'Central Group/PST Performance Team - เอกสาร').exists():
+    filepath = user_path / 'Central Group/PST Performance Team - เอกสาร'
+else:
+    filepath = user_path / 'Central Group/PST Performance Team - Documents'
 
+path = filepath / 'Apps' / 'time_sheet_excel.xlsx'
+
+engine = create_engine(dbc.db_url_pstdb)
+
+query_old = """
+            select max(id)
+            from stime_sheet
+            """
+
+#read sql
+df_old = pl.read_database(query_old, engine)
+print(df_old)
 # Read the Excel file into a DataFrame
-df = pd.read_excel(path2, sheet_name='Sheet1', usecols="A:N")
 
-# Rename the columns based on the mapping
-column_mapping = {
+df = pl.read_excel(path, sheet_name='Sheet1')
+df = df.filter(pl.col('id') > df_old[0,0])
+
+df = df.rename({
     'employeecode': 'empcode',
     'checkin_date': 'check_in_date',
     'checkin_hh': 'check_in_hour',
@@ -20,29 +38,22 @@ column_mapping = {
     'transportation_expenses': 'transport_expense',
     'timestamp': 'stamptime',
     'pda': 'pda_no'
-}
-df.rename(columns=column_mapping, inplace=True)
+})
 
-# Database connection string
-db_url = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb'
+print(df)
+print(df.columns)
 
-# Create the engine to connect to PostgreSQL
-engine = create_engine(db_url)
+# ========== Insert ==========
+try:
+    if df.is_empty():
+        print("ไม่มีข้อมูลใหม่")
+    else:
+        df.write_database(
+            table_name='stime_sheet',        # ✅ ลำดับ argument ถูกต้อง
+            connection=engine,               # ✅ ใช้ connection= 
+            if_table_exists='append'         # ✅ if_table_exists ไม่ใช่ if_exists
+        )
+        print(f"Data inserted successfully. {df.shape[0]:,} records inserted.")
+except Exception as e:
+    print(f"Error inserting data: {e}")
 
-# Fetch the existing data from the stime_sheet table
-query = "SELECT id FROM stime_sheet"
-
-with engine.connect() as connection:
-    result = connection.execute(text(query))
-    dfsql = pd.DataFrame(result.fetchall(), columns=result.keys())
-
-# Perform a left join to find rows in df that are not in dfsql
-new_data = pd.merge(df, dfsql, on='id', how='left', indicator=True)
-new_data = new_data[new_data['_merge'] == 'left_only'].drop(columns=['_merge'])
-
-# Insert only the new rows into the stime_sheet table
-if not new_data.empty:
-    new_data.to_sql('stime_sheet', engine, if_exists='append', index=False)
-    print("New data successfully inserted into 'stime_sheet'.")
-else:
-    print("No new data to insert.")

@@ -7,8 +7,8 @@ startime = dt.datetime.now()
 print(f"Script started at: {startime}")
 
 #Parameters
-sdate = '20250101'
-edate = '20251231'
+sdate = '20260101'
+edate = '20261231'
 
 #Connect to databases
 db = create_engine(dbc.db_url_pstdb)
@@ -25,18 +25,18 @@ query_var = f"""
                 description, 
                 qnt AS soh, 
                 price
-            FROM topscare_master_backup
+            FROM topscare_master
             where to_char(to_date(sdate,'dd/mm/yyyy'),'YYYYMMDD') between '{sdate}' and '{edate}'
             ),bar_all as (
             select cntnum 
                 ,sku as barcode 
                 ,sku
-            from topscare_master_backup tm 
+            from topscare_master tm 
             union all
             select cntnum
                 ,barcode 
                 ,sku
-            from topscare_master_backup tm 	
+            from topscare_master tm 	
             ),edit_max as (
             select es.cntnum ,
                 es."location",
@@ -157,9 +157,10 @@ query_old = f"""
 
 df_var = pl.read_database(query_var, db3)
 df_plan = pl.read_database(query_plan, db)
-df_old = pl.read_database(query_old, db3)
+df_old = pl.read_database(query_old, db3).with_columns(pl.col('stocktakeid').cast(pl.Utf8))
 
 df = df_var.join(df_plan, on=['stcode','cntdate'], how='semi')
+df = df.join(df_old, on='stocktakeid', how='anti')
 
 df = (df
       .group_by(['stocktakeid','sku','barcode','description','stcode','cntdate'])
@@ -168,18 +169,20 @@ df = (df
           (pl.col('qnt') * pl.col('price')).sum().alias('qnt_retail')
           )
     )
-
-df_del = df_old.join(df, on='stocktakeid', how='semi')
-id_list = df_del['stocktakeid'].to_list()
-
+df = df.rename({'description':'product_name'})
+df['skutype'] = 'Credit'
+df['rpname'] = 'STK2'
+df['dept'] = 'All'
+df['sub_dept'] = 'All'
+print(df)
+'''
 # ========== Delete → Insert ==========
-
 try:
-    df.write_database(db3, 'cfr_stk_this_year', if_exists='append', index=False)
+    df.write_database('cfr_stk_this_year', db3, if_table_exists='append')
     print(f"Data inserted successfully. {len(df)} records inserted.")
 except Exception as e:
     print(f"Error inserting data: {e}")
+'''
 
-print(f"")
 print(f"Script End at: {dt.datetime.now()}")
 print(f"Script completed in: {dt.datetime.now() - startime}")

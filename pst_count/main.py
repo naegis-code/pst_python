@@ -47,6 +47,11 @@ class SaveCountModel(BaseModel):
     qty: float
     username: str
 
+# --- เพิ่ม Model สำหรับรับค่าแก้ไขจำนวน ---
+class UpdateQtyModel(BaseModel):
+    scan_id: int
+    qty: float
+
 # --- API Endpoints ---
 
 # ข้อ 1: ระบบตรวจสอบ Login ตรงๆ จากฐานข้อมูล
@@ -97,20 +102,79 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
 @app.post("/api/save-count")
 async def save_count(data: SaveCountModel, db: AsyncSession = Depends(get_db)):
     try:
-        query = text("""
-            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, qty, username)
-            VALUES (:st_id, :loc_id, :sku, :barcode, :qty, :username)
+        # 1. ค้นหาค่า seq สูงสุดล่าสุดของ stocktakeid และ location_id นี้
+        seq_query = text("""
+            SELECT COALESCE(MAX(seq), 0) 
+            FROM count_scan 
+            WHERE stocktakeid = :st_id AND location_id = :loc_id
         """)
+        seq_result = await db.execute(seq_query, {"st_id": data.stocktakeid, "loc_id": data.location_id})
+        max_seq = seq_result.scalar() # ดึงค่าตัวเลขออกมาโดยตรง
+        next_seq = max_seq + 1        # บวกเพิ่ม 1 เพื่อเป็นลำดับถัดไป
+        
+        # 2. เพิ่มข้อมูลลงตารางพร้อมระบุค่า seq ลำดับถัดไป
+        query = text("""
+            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, qty, username, seq)
+            VALUES (:st_id, :loc_id, :sku, :barcode, :qty, :username, :seq)
+        """)
+        
         await db.execute(query, {
-            "st_id": data.stocktakeid, "loc_id": data.location_id, "sku": data.sku, 
-            "barcode": data.barcode, "qty": Decimal(str(data.qty)), "username": data.username
+            "st_id": data.stocktakeid, 
+            "loc_id": data.location_id, 
+            "sku": data.sku, 
+            "barcode": data.barcode, 
+            "qty": Decimal(str(data.qty)), 
+            "username": data.username,
+            "seq": next_seq # 👈 ส่งลำดับเข้าไปบันทึก
         })
         await db.commit()
-        return {"status": "success", "message": "บันทึกข้อมูลสำเร็จ"}
+        return {"status": "success", "message": "บันทึกข้อมูลสำเร็จ", "seq": next_seq}
+        
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+# --- 1. API สำหรับดึงรายการที่สแกนแล้วใน Location นั้นมาแสดงในตาราง ---    
+@app.get("/api/location-history/{stocktakeid}/{location_id}")
+async def get_location_history(stocktakeid: str, location_id: str, db: AsyncSession = Depends(get_db)):
+    query = text("""
+        SELECT scan_id, seq, barcode, description, qty 
+        FROM count_scan 
+        WHERE stocktakeid = :st_id AND location_id = :loc_id
+        ORDER BY seq DESC
+    """)
+    result = await db.execute(query, {"st_id": stocktakeid, "loc_id": location_id})
+    history = result.fetchall()
     
+    return [
+        {
+            "scan_id": row[0],
+            "seq": row[1],
+            "barcode": row[2],
+            "description": row[3],
+            "qty": float(row[4])
+        } for row in history
+    ]
+
+# --- 2. API สำหรับอัปเดตจำนวน (Edit Qty) ---
+@app.put("/api/update-qty")
+async def update_qty(data: UpdateQtyModel, db: AsyncSession = Depends(get_db)):
+    try:
+        query = text("""
+            UPDATE count_scan 
+            SET qty = :qty, "modify" = :now
+            WHERE scan_id = :scan_id
+        """)
+        await db.execute(query, {
+            "qty": Decimal(str(data.qty)),
+            "scan_id": data.scan_id,
+            "now": datetime.now()
+        })
+        await db.commit()
+        return {"status": "success", "message": "อัปเดตจำนวนสำเร็จ"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @app.get("/")
 async def read_index():

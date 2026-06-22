@@ -102,7 +102,7 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
 async def save_count(data: SaveCountModel, db: AsyncSession = Depends(get_db)):
     try:
         query = text("""
-            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, description, status, color, size, retail, qty, "user", created, modify)
+            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, description, status, color, size, retail, qty, username, created, modify)
             VALUES (:st_id, :loc_id, :sku, :barcode, :desc, :status, :color, :size, :retail, :qty, :username, :now, :now)
         """)
         await db.execute(query, {

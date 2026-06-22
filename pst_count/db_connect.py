@@ -4,3 +4,4 @@ db_url_pstdb3 = 'postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/ps
 db_url_pstdb4 = 'postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb4'
 db_url_pstdb5 = 'postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb5'
 db_url_pstdbtest = 'postgresql+asyncpg://prthanapat:20020015@103.22.182.82:5432/pstdbtest'
+db_url_pstdbtest_p ='postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdbtest'

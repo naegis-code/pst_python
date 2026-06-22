@@ -94,7 +94,7 @@
             <span>📋 รายการที่นับแล้วใน Location นี้</span>
             <span id="history-toggle-icon">▼ กางออก</span>
         </div>
-        
+
         <div id="history-table-box" class="history-table-container hidden">
             <table>
                 <thead>
@@ -168,6 +168,10 @@
             sessionState.location_id = loc;
             document.getElementById('active-loc').innerText = loc;
             switchView('view-scan');
+            // 💡 เพิ่ม 3 บรรทัดนี้: สั่งให้ตารางกางออกโดยอัตโนมัติทันทีเมื่อเข้าหน้านี้
+            document.getElementById('history-table-box').classList.remove('hidden');
+            document.getElementById('history-toggle-icon').innerText = "▲ หุบเก็บ";
+            isHistoryExpanded = true;
             loadLocationHistory(); // โหลดประวัติตารางมารอไว้
             setTimeout(() => document.getElementById('input-barcode').focus(), 300); 
         }
@@ -232,10 +236,14 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status === "success") {
-                    resetScanField(); 
-                    loadLocationHistory(); // ยิงเข้าตารางปุ๊บ สั่งรีเฟรชตารางประวัติด้านล่างทันที
-                } else { alert("บันทึกล้มเหลว"); }
-            });
+                    resetScanField(); // เคลียร์ช่องยิงบาร์โค้ดเดิมเพื่อรอยิงรายการถัดไป
+                    
+                    // 💡 บรรทัดที่เพิ่ม: สั่งให้ตารางด้านล่างดึงข้อมูลล่าสุดมาอัปเดตบนหน้าจอทันทีระหว่างยิง
+                    loadLocationHistory(); 
+                } else { 
+                    alert("บันทึกล้มเหลว"); 
+                }
+            }).catch(() => alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์"));
         }
 
         // --- ฟังก์ชันดึงประวัติมาวาดตาราง ---

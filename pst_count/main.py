@@ -8,6 +8,7 @@ from sqlalchemy import text
 from datetime import datetime
 from typing import Optional
 import db_connect as dbc
+from decimal import Decimal # 👈 นำเข้า Decimal
 
 # ข้อ 1: เชื่อมต่อฐานข้อมูลโดยตรงตาม URL ที่ระบุ
 DATABASE_URL = dbc.db_url_pstdbtest
@@ -47,8 +48,8 @@ class SaveCountModel(BaseModel):
     status: str
     color: str
     size: str
-    retail: float
-    qty: int
+    retail: Decimal
+    qty: Decimal
     username: str
 
 # --- API Endpoints ---
@@ -94,7 +95,7 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
         "status_code": product[2],
         "color": product[3],
         "size": product[4],
-        "retail": float(product[5])
+        "retail": Decimal(product[5])
     }
 
 # ข้อ 6: บันทึกข้อมูลการสแกนลงตาราง count_scan

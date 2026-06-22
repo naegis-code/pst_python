@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PST Stocktake Mobile System</title>
+    <style>
+        :root { --primary: #007bff; --danger: #dc3545; --success: #28a745; }
+        body { font-family: -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="text"], input[type="password"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 10px; }
+        .btn-primary { background: var(--primary); }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .nav-bar { display: flex; justify-content: space-between; margin-bottom: 15px; background: #343a40; padding: 10px; border-radius: 8px; color: white; align-items: center; }
+        .hidden { display: none; }
+        .product-info { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <div id="nav-section" class="nav-bar hidden">
+        <div>👤: <span id="display-username"></span> | 📁 ID: <span id="active-st"></span> | 📍 Loc: <span id="active-loc"></span></div>
+        <button class="btn-danger" style="width:auto; margin:0; padding:5px 10px;" onclick="logout()">Logout</button>
+    </div>
+
+    <div id="view-login" class="card">
+        <h2>PST STOCKTAKE LOGIN</h2>
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="login-username" placeholder="กรอกชื่อผู้ใช้">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="login-pass" placeholder="กรอกรหัสผ่าน">
+        </div>
+        <button class="btn-primary" onclick="handleLogin()">เข้าสู่ระบบ</button>
+    </div>
+
+    <div id="view-stocktake" class="card hidden">
+        <h3>ระบุรหัสแผนตรวจนับ (Stocktake ID)</h3>
+        <div class="input-group">
+            <input type="text" id="input-st" placeholder="สแกนหรือพิมพ์ Stocktake ID">
+        </div>
+        <button class="btn-primary" onclick="handleCheckStocktake()">ตรวจสอบข้อมูล</button>
+    </div>
+
+    <div id="view-location" class="card hidden">
+        <h3>ระบุพิกัดพื้นที่นับสินค้า (Scan Location)</h3>
+        <div class="input-group">
+            <input type="text" id="input-loc" placeholder="สแกน Location เช่น A-01-02">
+        </div>
+        <button class="btn-primary" onclick="handleSetLocation()">ตกลง</button>
+        <button class="btn-danger" onclick="backToStocktake()">↩️ เปลี่ยน Stocktake ID</button>
+    </div>
+
+    <div id="view-scan" class="card hidden">
+        <h3>ยิงสแกนสินค้า</h3>
+        <div class="input-group">
+            <label>Barcode สินค้า</label>
+            <input type="text" id="input-barcode" placeholder="ยิงบาร์โค้ดตรงนี้..." onkeypress="onBarcodeEnter(event)">
+        </div>
+
+        <div id="info-panel" class="product-info hidden">
+            <p><strong>SKU:</strong> <span id="p-sku"></span></p>
+            <p><strong>ชื่อสินค้า:</strong> <span id="p-desc"></span></p>
+            <p><strong>สถานะ:</strong> <span id="p-status"></span> | <strong>สี:</strong> <span id="p-color"></span> | <strong>ไซส์:</strong> <span id="p-size"></span></p>
+            <p><strong>ราคาปลีก (Retail):</strong> <span id="p-retail"></span> บาท</p>
+            
+            <div class="input-group">
+                <label>จำนวนนับจริง (พิมพ์แก้ไขทับได้)</label>
+                <input type="number" id="p-qty" value="1" onkeypress="onQtyEnter(event)">
+            </div>
+            <button class="btn-success" onclick="saveData()">💾 กดเพื่อบันทึกข้อมูล (หรือกด Enter)</button>
+        </div>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+        <button class="btn-primary" onclick="backToLocation()">📍 เปลี่ยนจุด Location</button>
+        <button class="btn-danger" onclick="backToStocktake()">↩️ เปลี่ยน Stocktake ID</button>
+    </div>
+
+    <script>
+        const API_HOST = "http://103.22.182.82:2600/api"; // เปลี่ยนเป็น IP Server หลังบ้านจริงของคุณ
+        let sessionState = { username: "", stocktakeid: "", location_id: "" };
+        let currentProduct = null;
+
+        // ฟังก์ชันสลับหน้าเพจ (SPA View Manager)
+        function switchView(viewId) {
+            ['view-login', 'view-stocktake', 'view-location', 'view-scan'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            if (viewId !== 'view-login') {
+                document.getElementById('nav-section').classList.remove('hidden');
+            } else {
+                document.getElementById('nav-section').classList.add('hidden');
+            }
+        }
+
+        // ข้อ 1: ทำการล็อกอิน
+        function handleLogin() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-pass').value;
+            fetch(`${API_HOST}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: u, password: p})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    sessionState.username = data.username;
+                    document.getElementById('display-username').innerText = data.username;
+                    switchView('view-stocktake');
+                } else { alert(data.detail); }
+            }).catch(() => alert("ติดต่อเซิร์ฟเวอร์ไม่ได้"));
+        }
+
+        // ข้อ 3: ตรวจสอบแผนงานตรวจนับ
+        function handleCheckStocktake() {
+            const stId = document.getElementById('input-st').value;
+            fetch(`${API_HOST}/check-stocktake/${stId}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    sessionState.stocktakeid = data.stocktakeid;
+                    document.getElementById('active-st').innerText = data.stocktakeid;
+                    switchView('view-location'); // ข้อ 4: ย้ายไปหน้าระบุพิกัดถัดไป
+                } else { alert(data.detail); }
+            }).catch(() => alert("ไม่พบข้อมูลรหัสแผนงานตรวจนับนี้"));
+        }
+
+        // ข้อ 4: ลงทะเบียนพื้นที่นับสินค้าสำเร็จ
+        function handleSetLocation() {
+            const loc = document.getElementById('input-loc').value;
+            if(!loc) return alert("กรุณาระบุตำแหน่งพิกัดก่อนทำงาน");
+            sessionState.location_id = loc;
+            document.getElementById('active-loc').innerText = loc;
+            switchView('view-scan');
+            setTimeout(() => document.getElementById('input-barcode').focus(), 300); // โฟกัสพร้อมทำงานทันที
+        }
+
+        // ข้อ 5: เมื่อพนักงานกดสแกนสินค้าแล้วปุ่ม Enter ทำงาน
+        function onBarcodeEnter(e) {
+            if (e.key === 'Enter') {
+                const bc = document.getElementById('input-barcode').value;
+                fetch(`${API_HOST}/find-product`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ stocktakeid: sessionState.stocktakeid, barcode: bc })
+                })
+                .then(res => {
+                    if(res.status === 404) {
+                        // ข้อ 5: ไม่พบข้อมูลให้แสดง Popup
+                        alert("❌ ไม่พบข้อมูลสินค้าชิ้นนี้ในผังระบบงาน!");
+                        resetScanField();
+                        throw new Error("Product Not Found");
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if(data.status === "success") {
+                        currentProduct = data;
+                        currentProduct.barcode = bc;
+                        
+                        // แสดงผลข้อมูลที่ดึงได้จากตาราง Master
+                        document.getElementById('p-sku').innerText = data.sku;
+                        document.getElementById('p-desc').innerText = data.description;
+                        document.getElementById('p-status').innerText = data.status_code;
+                        document.getElementById('p-color').innerText = data.color;
+                        document.getElementById('p-size').innerText = data.size;
+                        document.getElementById('p-retail').innerText = data.retail;
+                        
+                        document.getElementById('p-qty').value = "1"; // Default เป็น 1 พร้อมแก้ไขทับได้
+                        document.getElementById('info-panel').classList.remove('hidden');
+                        document.getElementById('p-qty').focus(); // ย้ายเคอร์เซอร์โฟกัสมาที่จำนวน
+                        document.getElementById('p-qty').select(); // เลือกค่ารอเพื่อพิมทับได้เลย
+                    }
+                }).catch(err => console.log(err));
+            }
+        }
+
+        // ดักเหตุการณ์กด Enter ที่ช่องระบุจำนวน
+        function onQtyEnter(e) {
+            if(e.key === 'Enter') { saveData(); }
+        }
+
+        // ข้อ 6 & 7: ส่งคำสั่งบันทึกข้อมูลและเตรียมตัวสแกนรายการถัดไปทันที
+        function saveData() {
+            if(!currentProduct) return;
+            const quantity = parseInt(document.getElementById('p-qty').value) || 1;
+            
+            fetch(`${API_HOST}/save-count`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    stocktakeid: sessionState.stocktakeid,
+                    location_id: sessionState.location_id,
+                    barcode: currentProduct.barcode,
+                    sku: currentProduct.sku,
+                    description: currentProduct.description,
+                    status: currentProduct.status_code,
+                    color: currentProduct.color,
+                    size: currentProduct.size,
+                    retail: currentProduct.retail,
+                    qty: quantity,
+                    username: sessionState.username
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    resetScanField(); // ข้อ 7: เคลียร์ค่าทั้งหมดให้พนักงานยกยิงรายการถัดไปได้ทันที
+                } else { alert("บันทึกล้มเหลว"); }
+            });
+        }
+
+        function resetScanField() {
+            document.getElementById('input-barcode').value = "";
+            document.getElementById('info-panel').classList.add('hidden');
+            currentProduct = null;
+            document.getElementById('input-barcode').focus(); // โฟกัสรอยิงเส้นใหม่
+        }
+
+        // กลุ่มฟังก์ชันการกดปุ่มเปลี่ยนสถานะ (ข้อ 8, 9, 10)
+        function backToLocation() { switchView('view-location'); }
+        function backToStocktake() { switchView('view-stocktake'); }
+        function logout() {
+            sessionState = { username: "", stocktakeid: "", location_id: "" };
+            document.getElementById('login-username').value = "";
+            document.getElementById('login-pass').value = "";
+            switchView('view-login');
+        }
+    </script>
+</body>
+</html>

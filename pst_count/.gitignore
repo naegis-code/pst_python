@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.pyc
 *.db
-*.txt
 *.csv
 *.log
 stocktake/__pycache__/db_connect.cpython-312.pyc

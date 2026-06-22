@@ -77,16 +77,27 @@ async def check_stocktake(stocktakeid: str, db: AsyncSession = Depends(get_db)):
 # ข้อ 5: ค้นหาข้อมูลสินค้าจากตาราง Master โดยผูกกับ Stocktake ID
 @app.post("/api/find-product")
 async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db)):
+    # 1. ลองค้นหาแบบตรงๆ (Exact Match) ดูก่อนเพื่อความเร็ว (ดึงคอลัมน์ barcode มาด้วย)
     query = text("""
-        SELECT sku, description, status, color, size, retail 
+        SELECT sku, description, status, color, size, retail, barcode 
         FROM master 
         WHERE stocktakeid = :st_id AND barcode = :barcode
     """)
     result = await db.execute(query, {"st_id": data.stocktakeid, "barcode": data.barcode})
     product = result.fetchone()
     
+    # 2. ถ้าไม่เจอ ให้ทำการตัดเลข 0 เพื่อค้นหาแบบยืดหยุ่น
     if not product:
-        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลสินค้า")
+        query_flexible = text("""
+            SELECT sku, description, status, color, size, retail, barcode 
+            FROM master 
+            WHERE stocktakeid = :st_id AND LTRIM(barcode, '0') = LTRIM(:barcode, '0')
+        """)
+        result_flexible = await db.execute(query_flexible, {"st_id": data.stocktakeid, "barcode": data.barcode})
+        product = result_flexible.fetchone()
+        
+        if not product:
+            raise HTTPException(status_code=404, detail="ไม่พบข้อมูลสินค้า")
         
     return {
         "status": "success",
@@ -95,7 +106,8 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
         "status_code": product[2],
         "color": product[3],
         "size": product[4],
-        "retail": Decimal(product[5])
+        "retail": Decimal(product[5]) if product[5] else Decimal("0.0"),  # 👈 แปลง retail เป็น Decimal
+        "master_barcode": product[6]  # 👈 ส่ง Barcode ที่ถูกต้องจาก Master กลับไปให้หน้าบ้าน
     }
 
 # ข้อ 6: บันทึกข้อมูลการสแกนลงตาราง count_scan

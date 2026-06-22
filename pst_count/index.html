@@ -194,7 +194,7 @@
                 .then(data => {
                     if(data.status === "success") {
                         currentProduct = data;
-                        currentProduct.barcode = bc;
+                        currentProduct.barcode = data.master_barcode;
                         
                         document.getElementById('p-sku').innerText = data.sku;
                         document.getElementById('p-desc').innerText = data.description;

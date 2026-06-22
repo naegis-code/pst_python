@@ -101,7 +101,6 @@
                     <tr>
                         <th>Seq</th>
                         <th>Barcode</th>
-                        <th>Description</th>
                         <th>Qty</th>
                         <th>จัดการ</th>
                     </tr>
@@ -262,9 +261,8 @@
                     row.innerHTML = `
                         <td><strong>${item.seq}</strong></td>
                         <td>${item.barcode}</td>
-                        <td>${item.description || '-'}</td>
                         <td style="color:blue; font-weight:bold;">${item.qty.toFixed(3)}</td>
-                        <td><button class="btn-edit" onclick="editOldQty(${item.scan_id}, ${item.qty}, '${item.description}')">แก้ไข</button></td>
+                        <td><button class="btn-edit" onclick="editOldQty(${item.scan_id}, ${item.qty}, '${item.barcode}')">แก้ไข</button></td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -272,8 +270,8 @@
         }
 
         // --- ฟังก์ชันกดแก้ไขจำนวนเก่า ---
-        function editOldQty(scanId, currentQty, description) {
-            const newQtyStr = prompt(`แก้ไขจำนวนสินค้า: ${description}\nจำนวนเดิมคือ: ${currentQty.toFixed(3)}`, currentQty.toFixed(3));
+        function editOldQty(scanId, currentQty, barcode) {
+            const newQtyStr = prompt(`แก้ไขจำนวนสินค้า: ${barcode}\nจำนวนเดิมคือ: ${currentQty.toFixed(3)}`, currentQty.toFixed(3));
             if (newQtyStr === null) return; // กดยกเลิก
             
             const newQty = parseFloat(newQtyStr);

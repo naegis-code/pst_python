@@ -138,7 +138,7 @@ async def save_count(data: SaveCountModel, db: AsyncSession = Depends(get_db)):
 @app.get("/api/location-history/{stocktakeid}/{location_id}")
 async def get_location_history(stocktakeid: str, location_id: str, db: AsyncSession = Depends(get_db)):
     query = text("""
-        SELECT scan_id, seq, barcode, description, qty 
+        SELECT scan_id, seq, barcode, qty 
         FROM count_scan 
         WHERE stocktakeid = :st_id AND location_id = :loc_id
         ORDER BY seq DESC
@@ -151,8 +151,7 @@ async def get_location_history(stocktakeid: str, location_id: str, db: AsyncSess
             "scan_id": row[0],
             "seq": row[1],
             "barcode": row[2],
-            "description": row[3],
-            "qty": float(row[4])
+            "qty": float(row[3])
         } for row in history
     ]
 

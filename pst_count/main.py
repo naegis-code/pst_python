@@ -44,11 +44,6 @@ class SaveCountModel(BaseModel):
     location_id: str
     barcode: str
     sku: str
-    description: str
-    status: str
-    color: str
-    size: str
-    retail: float
     qty: float
     username: str
 
@@ -103,14 +98,12 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
 async def save_count(data: SaveCountModel, db: AsyncSession = Depends(get_db)):
     try:
         query = text("""
-            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, description, status, color, size, retail, qty, username)
-            VALUES (:st_id, :loc_id, :sku, :barcode, :desc, :status, :color, :size, :retail, :qty, :username)
+            INSERT INTO count_scan (stocktakeid, location_id, sku, barcode, qty, username)
+            VALUES (:st_id, :loc_id, :sku, :barcode, :qty, :username)
         """)
         await db.execute(query, {
             "st_id": data.stocktakeid, "loc_id": data.location_id, "sku": data.sku, 
-            "barcode": data.barcode, "desc": data.description, "status": data.status, 
-            "color": data.color, "size": data.size, "retail": Decimal(str(data.retail)), "qty": Decimal(str(data.qty)), 
-            "username": data.username, "now": datetime.now()
+            "barcode": data.barcode, "qty": Decimal(str(data.qty)), "username": data.username
         })
         await db.commit()
         return {"status": "success", "message": "บันทึกข้อมูลสำเร็จ"}

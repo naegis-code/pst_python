@@ -192,7 +192,7 @@
         // ข้อ 6 & 7: ส่งคำสั่งบันทึกข้อมูลและเตรียมตัวสแกนรายการถัดไปทันที
         function saveData() {
             if(!currentProduct) return;
-            const quantity = parseInt(document.getElementById('p-qty').value) || 1;
+            const quantity = parseFloat(document.getElementById('p-qty').value) || 1;
             
             fetch(`${API_HOST}/save-count`, {
                 method: 'POST',
@@ -202,11 +202,6 @@
                     location_id: sessionState.location_id,
                     barcode: currentProduct.barcode,
                     sku: currentProduct.sku,
-                    description: currentProduct.description,
-                    status: currentProduct.status_code,
-                    color: currentProduct.color,
-                    size: currentProduct.size,
-                    retail: currentProduct.retail,
                     qty: quantity,
                     username: sessionState.username
                 })

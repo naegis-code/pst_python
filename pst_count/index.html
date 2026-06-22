@@ -76,7 +76,7 @@
         <div id="info-panel" class="product-info hidden">
             <p><strong>SKU:</strong> <span id="p-sku"></span></p>
             <p><strong>ชื่อสินค้า:</strong> <span id="p-desc"></span></p>
-            <p><strong>สถานะ:</strong> <span id="p-status"></span> | <strong>สี:</strong> <span id="p-color"></span> | <strong>ไซส์:</strong> <span id="p-size"></span></p>
+            <p><strong>สถานะ:</strong> <span id="p-status"></span> | <strong>แพ็ค:</strong> <span id="p-pack"></span> | <strong>สี:</strong> <span id="p-color"></span> | <strong>ไซส์:</strong> <span id="p-size"></span></p>
             <p><strong>ราคาปลีก (Retail):</strong> <span id="p-retail"></span> บาท</p>
             
             <div class="input-group">
@@ -202,6 +202,7 @@
                         document.getElementById('p-color').innerText = data.color;
                         document.getElementById('p-size').innerText = data.size;
                         document.getElementById('p-retail').innerText = data.retail;
+                        document.getElementById('p-pack').innerText = data.pack;
                         
                         document.getElementById('p-qty').value = "1.000"; 
                         document.getElementById('info-panel').classList.remove('hidden');

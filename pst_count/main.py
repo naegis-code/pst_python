@@ -79,7 +79,7 @@ async def check_stocktake(stocktakeid: str, db: AsyncSession = Depends(get_db)):
 async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db)):
     # 1. ลองค้นหาแบบตรงๆ (Exact Match) ดูก่อนเพื่อความเร็ว (ดึงคอลัมน์ barcode มาด้วย)
     query = text("""
-        SELECT sku, description, status, color, size, retail, barcode 
+        SELECT sku, description, status, color, size, retail, barcode, pack
         FROM master 
         WHERE stocktakeid = :st_id AND barcode = :barcode
     """)
@@ -89,7 +89,7 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
     # 2. ถ้าไม่เจอ ให้ทำการตัดเลข 0 เพื่อค้นหาแบบยืดหยุ่น
     if not product:
         query_flexible = text("""
-            SELECT sku, description, status, color, size, retail, barcode 
+            SELECT sku, description, status, color, size, retail, barcode ,pack
             FROM master 
             WHERE stocktakeid = :st_id AND LTRIM(barcode, '0') = LTRIM(:barcode, '0')
         """)
@@ -107,7 +107,8 @@ async def find_product(data: ScanBarcodeModel, db: AsyncSession = Depends(get_db
         "color": product[3],
         "size": product[4],
         "retail": Decimal(product[5]) if product[5] else Decimal("0.0"),  # 👈 แปลง retail เป็น Decimal
-        "master_barcode": product[6]  # 👈 ส่ง Barcode ที่ถูกต้องจาก Master กลับไปให้หน้าบ้าน
+        "master_barcode": product[6],  # 👈 ส่ง Barcode ที่ถูกต้องจาก Master กลับไปให้หน้าบ้าน
+        "pack": product[7]  # 👈 ส่งค่า pack กลับไปให้หน้าบ้าน
     }
 
 # ข้อ 6: บันทึกข้อมูลการสแกนลงตาราง count_scan

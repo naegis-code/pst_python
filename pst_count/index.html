@@ -86,10 +86,15 @@
             <button class="btn-success" onclick="saveData()">💾 กดเพื่อบันทึกข้อมูล (หรือกด Enter)</button>
         </div>
 
-        <div class="history-header" onclick="toggleHistoryTable()">
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+        <button class="btn-primary" onclick="backToLocation()">📍 เปลี่ยนจุด Location</button>
+        <button class="btn-danger" onclick="backToStocktake()">↩️ เปลี่ยน Stocktake ID</button>
+
+                <div class="history-header" onclick="toggleHistoryTable()">
             <span>📋 รายการที่นับแล้วใน Location นี้</span>
             <span id="history-toggle-icon">▼ กางออก</span>
         </div>
+        
         <div id="history-table-box" class="history-table-container hidden">
             <table>
                 <thead>
@@ -105,10 +110,6 @@
                     </tbody>
             </table>
         </div>
-
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
-        <button class="btn-primary" onclick="backToLocation()">📍 เปลี่ยนจุด Location</button>
-        <button class="btn-danger" onclick="backToStocktake()">↩️ เปลี่ยน Stocktake ID</button>
     </div>
 
     <script>

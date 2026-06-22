@@ -48,8 +48,8 @@ class SaveCountModel(BaseModel):
     status: str
     color: str
     size: str
-    retail: Decimal
-    qty: Decimal
+    retail: float
+    qty: float
     username: str
 
 # --- API Endpoints ---
@@ -109,7 +109,7 @@ async def save_count(data: SaveCountModel, db: AsyncSession = Depends(get_db)):
         await db.execute(query, {
             "st_id": data.stocktakeid, "loc_id": data.location_id, "sku": data.sku, 
             "barcode": data.barcode, "desc": data.description, "status": data.status, 
-            "color": data.color, "size": data.size, "retail": data.retail, "qty": data.qty, 
+            "color": data.color, "size": data.size, "retail": Decimal(str(data.retail)), "qty": Decimal(str(data.qty)), 
             "username": data.username, "now": datetime.now()
         })
         await db.commit()

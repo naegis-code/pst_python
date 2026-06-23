@@ -39,7 +39,7 @@ try:
     
     with tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
         for i in range(0, len(df), chunk_size):
-            #df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
+            df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
             pbar.update(1)
     
     conn.close()
@@ -83,7 +83,7 @@ df['nonfood_consign'] = 0 #df['soh'].where((df['sku_t'] == '02') & (df['vendor']
 df['perishable_nonmer'] = df['soh'].where(df['sku_t'] == '03', 0)
 
 # totalsoh is only for '01' and '03'
-df['totalsoh'] = df['food_credit'] + df['nonfood_consign'] + df['perishable_nonmer']
+df['totalsoh'] = df['food_credit'] + df['perishable_nonmer']
 
 df =df.drop(columns=['sku_t','vendor','soh'])
 
@@ -91,7 +91,7 @@ df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_on
 
 engine = create_engine(db_url_pstdb)
 try:
-    #df.to_sql(table_soh_update, engine, if_exists='append', index=False)
+    df.to_sql(table_soh_update, engine, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
     os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))

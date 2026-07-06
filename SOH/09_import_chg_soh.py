@@ -12,7 +12,7 @@ import math
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 timestamp_date = datetime.now().strftime('%Y%m%d')  # Use hyphens for file system safety
 
-#timestamp_date = '20260506'
+timestamp_date = '20260701'
 file = f'14_MSTKVAL{timestamp_date}.csv'  # File name
 print("File to be processed:", file)
 

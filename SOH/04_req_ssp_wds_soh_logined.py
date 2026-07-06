@@ -54,5 +54,5 @@ desired_color = (171, 171, 171)
 position = (807, 202)
 
 
-for sequence in range(2, 39):
+for sequence in range(11, 39):
     wait_for_color_change(initial_color, desired_color, position, sequence)

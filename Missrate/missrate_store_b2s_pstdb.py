@@ -7,8 +7,8 @@ import numpy as np
 print("Start : ",datetime.datetime.now())
 
 
-date_start_manual = '20260101'
-date_end_manual = '20260630'
+date_start_manual = '20250101'
+date_end_manual = '20251231'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
@@ -22,11 +22,11 @@ print(f"Processing Missrate Store Data from {date_start} to {date_end}")
 
 bu = 'b2s'
 table_type = 'stk'
-table_bu = f'{bu.lower()}_{table_type.lower()}_this_year'
+table_bu = f'{bu.lower()}_{table_type.lower()}'
 table_missrate = 'missrate_store'
 
-query_perparation = text(f"""update b2s_stk_this_year set bu = 'B2S',stcode = store where bu is null""")
-with db3.begin() as conn:
+query_perparation = text(f"""update b2s_stk set bu = 'B2S',stcode = store where bu is null""")
+with db.begin() as conn:
     conn.execute(query_perparation)
     print("Data preparation completed successfully.")
 
@@ -37,7 +37,7 @@ query = text(f"""
                 cntdate ,
                 sku ,
                 sum(qty_count) as qty_count 
-            from {bu.lower()}_reconcile_this_year bsrty 
+            from {bu.lower()}_reconcile bsrty 
             group by bu,stcode ,cntdate ,sku 
             ), bef_fvf as (
             select svty.bu,
@@ -46,8 +46,8 @@ query = text(f"""
                 svty.sku ,
                 sum(case when svty.rpname = '{table_type.upper()}1' then svty.qty_count else 0 end) as first,
                 sum(case when svty.rpname = '{table_type.upper()}2' then svty.qty_count else 0 end) as final
-            from {bu.lower()}_{table_type.lower()}_this_year svty 
-            left join {bu.lower()}_block_this_year bsbty 
+            from {bu.lower()}_{table_type.lower()} svty 
+            left join {bu.lower()}_block bsbty 
                 on svty.bu = bsbty.bu
                 and svty.stcode = bsbty.stcode 
                 and svty.cntdate = bsbty.cntdate 
@@ -71,7 +71,7 @@ query = text(f"""
                 and bf.sku = rec.sku""")
 
 # Read data from database
-df = pd.read_sql(query, db3)
+df = pd.read_sql(query, db)
 
 # ป้องกัน Error จากค่าว่างก่อนคำนวณ
 df[['first', 'final', 'rec']] = df[['first', 'final', 'rec']].fillna(0)
@@ -95,20 +95,6 @@ df_grouped['bu'] = bu.upper()
 print(f"Data processing completed successfully with {len(df_grouped)} records.")
 print(df_grouped)
 
-'''
-query_old = text(f"""
-            select bu,stcode ,cntdate
-            from {table_missrate}
-            where cntdate BETWEEN '{datetime.datetime.strptime(date_start, '%Y%m%d').date()}' AND '{datetime.datetime.strptime(date_end, '%Y%m%d').date()}'
-                and bu = '{bu.upper()}'
-    """)
-
-# Read old data from database
-df_old = pd.read_sql(query_old, db)
-# Merge new data with old data
-df_merged = pd.merge(df_grouped, df_old, on=['bu', 'stcode', 'cntdate'], how='left',indicator=True)
-df_merged = df_merged[df_merged['_merge'] == 'left_only'].drop(columns=['_merge'])
-'''
 try:
     with db.begin() as conn:
         # Delete old records for the specified date range and business unit
@@ -122,11 +108,9 @@ try:
 
     df_grouped.to_sql(table_missrate, db, if_exists='append', index=False)
 
-    print(df_grouped)
     print(f"Data inserted into {len(df_grouped)} rows successfully.")
 
 except Exception as e:
     print(f"Error occurred while deleting old records: {e}")
 
 print("End : ",datetime.datetime.now())
-

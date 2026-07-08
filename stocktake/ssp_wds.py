@@ -150,7 +150,7 @@ for file in excel_files:
 
             xls.close()
             print(f"✅Processed & inserted {file} with {len(df)} rows to {bu}_{table_stk}_this_year ({excel_files.index(file)+1}/{len(excel_files)})")
-            print(df.head(5))
+            
         else:
             print(f"❌sheet not found in {file}")
     except Exception as e:

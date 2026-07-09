@@ -95,20 +95,6 @@ df_grouped['bu'] = bu.upper()
 print(f"Data processing completed successfully with {len(df_grouped)} records.")
 print(df_grouped)
 
-'''
-query_old = text(f"""
-            select bu,stcode ,cntdate
-            from {table_missrate}
-            where cntdate BETWEEN '{datetime.datetime.strptime(date_start, '%Y%m%d').date()}' AND '{datetime.datetime.strptime(date_end, '%Y%m%d').date()}'
-                and bu = '{bu.upper()}'
-    """)
-
-# Read old data from database
-df_old = pd.read_sql(query_old, db)
-# Merge new data with old data
-df_merged = pd.merge(df_grouped, df_old, on=['bu', 'stcode', 'cntdate'], how='left',indicator=True)
-df_merged = df_merged[df_merged['_merge'] == 'left_only'].drop(columns=['_merge'])
-'''
 try:
     with db.begin() as conn:
         # Delete old records for the specified date range and business unit

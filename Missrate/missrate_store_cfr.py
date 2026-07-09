@@ -5,8 +5,9 @@ import datetime
 
 print("Start : ",datetime.datetime.now())
 
+bu = 'cfr'
 date_start_manual = '20260101'
-date_end_manual = '20260430'
+date_end_manual = '20261231'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
@@ -15,7 +16,8 @@ date_end = date_end_manual
 
 print(f"Processing Missrate Store Data from {date_start} to {date_end}")
 
-table = 'missrate_store'
+
+table_missrate = 'missrate_store'
 table_view = 'missrate_job_view_2'
 
 engine = create_engine(db_connect.db_url_pstdb)
@@ -32,28 +34,26 @@ query = text(f"""
         and ost_scan > 0;
     """)
 
-query_missrate_store = text(f"""
-    SELECT bu,stcode,cntdate,vendor
-    FROM {table}
-    WHERE cntdate BETWEEN to_date('{date_start}', 'YYYYMMDD') AND to_date('{date_end}', 'YYYYMMDD');
-    """)
+df = pd.read_sql(query, engine)
 
+try:
+    with engine.begin() as conn:
+        # Delete old records for the specified date range and business unit
+        delete_query = text(f"""
+            DELETE FROM {table_missrate}
+            WHERE cntdate BETWEEN '{date_start}' AND '{date_end}'
+                AND bu = '{bu.upper()}'
+        """)
+        conn.execute(delete_query)
+        print(f"Old records deleted for {bu.upper()} between {date_start} and {date_end}.")
 
-# Read data from database
-df_query = pd.read_sql(query, engine)
+    df.to_sql(table_missrate, engine, if_exists='append', index=False)
 
-df_missrate_store = pd.read_sql(query_missrate_store, engine)
+    print(df)
+    print(f"Data inserted into {len(df)} rows successfully.")
 
-df_query = df_query.merge(df_missrate_store, on=['bu','stcode','cntdate','vendor'], how='left', indicator=True)
-df_query = df_query[df_query['_merge'] == 'left_only'].drop(columns=['_merge'])
-
-# test print
-print(df_query)
-
-# Insert data to table
-df_query.to_sql(table, engine, if_exists='append', index=False)
-
-print(f"Data: {len(df_query)} record", table,"inserted successfully.")
+except Exception as e:
+    print(f"Error occurred while deleting old records: {e}")
 
 print("End : ",datetime.datetime.now())
 

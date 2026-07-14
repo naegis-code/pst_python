@@ -91,12 +91,12 @@ for i, file in enumerate(excel_files, start=1):
         df_reconcile.to_sql(table_reconcile, db3, if_exists='append', index=False)
 
 
-'''
+
     df_block = process(file, sheet_block, usecols_block, skiprows_block)
     if not df_block.empty:
         print(f"✅ Block processed {file.name} ({len(df_block)} rows) ({i}/{len(excel_files)})")
         df_block.to_sql(table_block, db3, if_exists='append', index=False)
-'''
+
 
 
 

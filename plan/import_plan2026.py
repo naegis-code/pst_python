@@ -124,6 +124,7 @@ try:
 
     #db_url = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb'
     engine = create_engine(db_url_pstdb, echo=False)
+    print(engine)
 
     try:
         # Execute the delete query to clear the 'plan2025' table

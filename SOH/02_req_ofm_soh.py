@@ -2,12 +2,20 @@ import pyautogui
 import os
 import time
 from datetime import datetime, timedelta
-from user_pass import ofm_user, ofm_pass
 import pathlib
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 user_path = pathlib.Path.home()
 desktop_path = user_path / 'Desktop'
 program_path = desktop_path / 'B2S&OFM.WS'
+
+user = os.getenv('ofm_user')
+password = os.getenv('ofm_pass')
+
+print(f"User: {user}")
+print(f"Password: {password}")
 
 os.system(f'start "" "{program_path}"')
 
@@ -20,16 +28,16 @@ windows = pyautogui.getWindowsWithTitle("Session A - [24 x 80]")  # Replace with
 if windows:
     windows[0].activate()
     time.sleep(1)  
-    pyautogui.write(ofm_user)
+    pyautogui.write(user)
     pyautogui.press('tab')
     time.sleep(0.5)
-    pyautogui.write(ofm_pass)
+    pyautogui.write(password)
     pyautogui.press('enter')
     time.sleep(10)
-    pyautogui.write(ofm_user)
+    pyautogui.write(user)
     pyautogui.press('tab')
     time.sleep(0.5)
-    pyautogui.write(ofm_pass)
+    pyautogui.write(password)
     time.sleep(0.5)
     pyautogui.press('enter')
     time.sleep(0.5)

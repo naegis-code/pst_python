@@ -2,20 +2,26 @@ import pyautogui as pg
 import os
 import time
 from datetime import datetime, timedelta
-from user_pass import *
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+user = os.getenv('pwb_user')
+password = os.getenv('pwb_pass')
+url = os.getenv('pwb_url')
 
 os.system('start "" "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk"')
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%d%m%y')
 
 time.sleep(2)
-pg.write(pwb_url)
+pg.write(url)
 time.sleep(1)
 pg.press('enter')
 pg.sleep(2)
-pg.write(pwb_user)
+pg.write(user)
 pg.press('tab')
-pg.write(pwb_pass)
+pg.write(password)
 pg.press('enter')
 pg.sleep(2)
 pg.press('tab',presses=6)

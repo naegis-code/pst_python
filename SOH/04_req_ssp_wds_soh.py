@@ -3,6 +3,13 @@ import pyautogui
 import time
 from user_pass import *
 import pathlib
+from datetime import datetime, timedelta
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+username = os.getenv('sspwds_user')
+password = os.getenv('sspwds_pass')
 
 mkdir = pathlib.Path.home() / 'Documents' / 'soh' / 'wds'
 if not os.path.exists(mkdir):
@@ -58,9 +65,9 @@ time.sleep(5)  # Allow window to open
 if not os.path.exists(mkdir):
     os.makedirs(mkdir)
 
-pyautogui.write(sspwds_user)
+pyautogui.write(username)
 pyautogui.press('tab')
-pyautogui.write(sspwds_pass)
+pyautogui.write(password)
 pyautogui.press('enter')
 time.sleep(5)
 pyautogui.press('alt')

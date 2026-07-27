@@ -2,6 +2,42 @@ import pandas as pd
 from sqlalchemy import create_engine,text
 import db_connect
 import pathlib
+import os
+from dotenv import load_dotenv, find_dotenv
+import socket
+import subprocess
+import time
+
+# ==================== โหลดค่าจาก .env ====================
+load_dotenv(find_dotenv())
+
+def is_port_open(host, port, timeout=2):
+    """เช็คว่าพอร์ต local เปิด (มีอะไร listening อยู่) หรือไม่"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        result = s.connect_ex((host, port))
+        return result == 0
+
+DB_HOST = "localhost"
+DB_PORT = 5432
+
+if is_port_open(DB_HOST, DB_PORT):
+    print(f"✅ พอร์ต {DB_PORT} ที่ {DB_HOST} เปิดอยู่ — tunnel ทำงานอยู่")
+else:
+    print(f"❌ พอร์ต {DB_PORT} ที่ {DB_HOST} ปิดอยู่ — tunnel ยังไม่เปิด")
+    subprocess.Popen(
+        "start /b ssh -f -N pst-db",
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+    print("🔑 กำลังเปิด SSH tunnel... (รอ 5 วินาที)")
+    time.sleep(5)
+    print("✅ SSH tunnel เปิดแล้ว") if is_port_open(DB_HOST, DB_PORT) else print("❌ SSH tunnel ยังไม่เปิด — ตรวจสอบการเชื่อมต่อ SSH")
+
+engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
 
 userpath = pathlib.Path.home()
 filepath = (
@@ -16,9 +52,6 @@ save_path_planall2 = filepath / 'Apps' / 'planall2_checklist.csv'
 path = r"D:\Users\prthanap\OneDrive - Central Group\Apps\checklist_all.csv"
 
 filter_count_date = '20240101'
-
-engine_db = create_engine(db_connect.db_url_pstdb)
-#'postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb'
 
 q_checklist = text("""
                    select c.stcode 
@@ -42,7 +75,7 @@ q_checklist = text("""
                         and p.branch is not null
                    """)
 
-df_checklist = pd.read_sql(q_checklist, engine_db, params={'filter_count_date': filter_count_date})
+df_checklist = pd.read_sql(q_checklist, engine1, params={'filter_count_date': filter_count_date})
 
 q_planall2 = text("""
                     select p.*
@@ -51,7 +84,7 @@ q_planall2 = text("""
                     where atype in('3F')
                         and cntdate >= :filter_count_date
                      """)
-df_planall2 = pd.read_sql(q_planall2, engine_db, params={'filter_count_date': filter_count_date})
+df_planall2 = pd.read_sql(q_planall2, engine1, params={'filter_count_date': filter_count_date})
 
 
 df_checklist.to_csv(save_path_checklist, index=False)

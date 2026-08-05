@@ -6,7 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 import subprocess
 import time
 
-#pl.Config.set_tbl_cols(-1)
+pl.Config.set_tbl_cols(-1)
 
 # ==================== โหลดค่าจาก .env ====================
 load_dotenv(find_dotenv())
@@ -60,40 +60,34 @@ if (user_path / 'Central Group/PST Performance Team - เอกสาร').exist
 else:
     filepath = user_path / 'Central Group/PST Performance Team - Documents'
 
-path = filepath / 'Apps' / 'customer_satisfaction.xlsx'
-table = 'customer_satisfaction'
+path = filepath / 'Apps' / 'Report_Statistics4.xlsx'
+table = 'report_statistics'
 
-df = pl.read_excel(path, table_name='Table2')
+df = pl.read_excel(path, table_name='Table1')
 
-df = df.with_columns([
-    pl.col("a1").cast(pl.Int64),
-    pl.col("a2").cast(pl.Int64),
-    pl.col("b1").cast(pl.Int64),
-    pl.col("b2").cast(pl.Int64),
-    pl.col("b3").cast(pl.Int64),
-    pl.col("b4").cast(pl.Int64),
-    pl.col("c1").cast(pl.Int64),
-    pl.col("c2").cast(pl.Int64),
-    pl.col("c3").cast(pl.Int64),
-    pl.col("c4").cast(pl.Int64),
-    pl.col("c5").cast(pl.Int64),
-    pl.col("d1").cast(pl.Int64),
-    pl.col("d2").cast(pl.Int64),
-    pl.col("d3").cast(pl.Int64),
-    pl.col("e1").cast(pl.Int64),
-    pl.col("e2").cast(pl.Int64),
-    pl.col("e3").cast(pl.Int64),
-    pl.col("e4").cast(pl.Int64),
-])
+df = df.rename({
+    "ID": "id",
+    "Email": "email",
+    "StartTime": "starttime",
+    "BU": "bu",
+    "StoreCode": "storecode",
+    "CNTDATE": "cntdate",
+    "Checklist": "checklist",
+    "Report1": "report1",
+    "Report3": "report3",
+    "FVF_Missrate": "fvf_missrate",
+    "Issues": "issues",
+    "Document Cut-Off Excel &amp; PDF": "document cut-off excel & pdf",
+    "Other": "other"
+})
 
 query_old = f"SELECT id FROM {table}"
 
 df_old = pl.read_database_uri(query_old, engine1)
 
 df = df.join(df_old, left_on="id", right_on="id", how="anti")
-
 print(df)
-
 df.write_database(table, engine1, if_table_exists="append")
 print(f"✅ อัปโหลดข้อมูลไปยังตาราง {table} จำนวน {df.height} แถวเรียบร้อยแล้ว")
+
 

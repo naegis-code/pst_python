@@ -161,7 +161,10 @@ def outsource_manday():
     # import new data
     df.to_sql('outsources', con=db, if_exists='append', index=False)
 
+
     print("✅New data Manday inserted. end time :", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     
 outsource_pieces()
 outsource_manday()
+
+

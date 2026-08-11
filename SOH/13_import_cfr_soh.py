@@ -1,9 +1,44 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from datetime import datetime
-from db_connect import db_url_pstdb, db_url_pstdb2
 import os
 import pathlib
+from dotenv import load_dotenv, find_dotenv
+import socket
+import subprocess
+import time
+
+# ==================== โหลดค่าจาก .env ====================
+load_dotenv(find_dotenv())
+
+def is_port_open(host, port, timeout=2):
+    """เช็คว่าพอร์ต local เปิด (มีอะไร listening อยู่) หรือไม่"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        result = s.connect_ex((host, port))
+        return result == 0
+
+DB_HOST = "localhost"
+DB_PORT = 5432
+
+if is_port_open(DB_HOST, DB_PORT):
+    print(f"✅ พอร์ต {DB_PORT} ที่ {DB_HOST} เปิดอยู่ — tunnel ทำงานอยู่")
+else:
+    print(f"❌ พอร์ต {DB_PORT} ที่ {DB_HOST} ปิดอยู่ — tunnel ยังไม่เปิด")
+    subprocess.Popen(
+        "start /b ssh -f -N pst-db",
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+    print("🔑 กำลังเปิด SSH tunnel... (รอ 5 วินาที)")
+    time.sleep(5)
+    print("✅ SSH tunnel เปิดแล้ว") if is_port_open(DB_HOST, DB_PORT) else print("❌ SSH tunnel ยังไม่เปิด — ตรวจสอบการเชื่อมต่อ SSH")
+
+engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
+
 
 # Set file path
 user_path = pathlib.Path.home()
@@ -63,8 +98,8 @@ from sqlalchemy.exc import SQLAlchemyError
 # Use environment variables or a configuration file for sensitive information
 
 try:
-	engine = create_engine(db_url_pstdb2)
-	df.to_sql('cfr_soh2', con=engine, if_exists='append', index=False)
+
+	df.to_sql('cfr_soh2', con=engine2, if_exists='append', index=False)
 	timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 	print(f"Data cfr_soh2 imported to database successfully at {timestamp}")
 except FileNotFoundError:
@@ -77,8 +112,8 @@ except Exception as e:
 df.rename(columns={"data_date": "DATE"}, inplace=True)
 
 try:
-    engine = create_engine(db_url_pstdb)
-    df.to_sql(table_soh_update, con=engine, if_exists='append', index=False)
+    
+    df.to_sql(table_soh_update, con=engine1, if_exists='append', index=False)
     os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

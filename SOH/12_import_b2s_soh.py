@@ -1,18 +1,70 @@
 import pandas as pd
-from sqlalchemy import create_engine,text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from datetime import datetime
 from tqdm import tqdm
 import os
-import db_connect
-from sqlalchemy.exc import SQLAlchemyError
 import pathlib
+from dotenv import load_dotenv, find_dotenv
+import subprocess
+import time
+
+# ==================== โหลดค่าจาก .env ====================
+load_dotenv(find_dotenv())
+
+DB_CONN_STR = f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}"
+engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
+
+
+def is_db_reachable(conn_str, timeout=3):
+    """ยิง query ทดสอบจริง แทนการเช็คแค่พอร์ต"""
+    try:
+        test_engine = create_engine(conn_str, connect_args={"connect_timeout": timeout})
+        with test_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        test_engine.dispose()
+        return True
+    except OperationalError:
+        return False
+    except SQLAlchemyError:
+        return False
+
+
+def ensure_tunnel(conn_str, ssh_alias="pst-db", max_wait=15, check_interval=1):
+    if is_db_reachable(conn_str):
+        print("✅ Database ต่อได้อยู่แล้ว — tunnel ทำงานปกติ")
+        return
+
+    print("❌ ต่อ Database ไม่ได้ — กำลังเปิด SSH tunnel...")
+    subprocess.Popen(
+        "start /b ssh -f -N " + ssh_alias,
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+
+    print("🔑 รอ tunnel พร้อมใช้งาน...")
+    waited = 0
+    while waited < max_wait:
+        time.sleep(check_interval)
+        waited += check_interval
+        if is_db_reachable(conn_str):
+            print(f"✅ SSH tunnel เปิดสำเร็จ (ใช้เวลา {waited} วินาที)")
+            return
+
+    raise RuntimeError(f"❌ เปิด tunnel ไม่สำเร็จภายใน {max_wait} วินาที — ต่อ Database ไม่ได้")
+
+
+# --- main ---
+ensure_tunnel(DB_CONN_STR)
+
 
 bu = 'B2S'
 path = pathlib.Path.home() / 'Downloads' / 'b2s_soh.csv'
 table = 'b2s_soh'
 table_soh_update = 'soh_update'
-engine_db = create_engine(db_connect.db_url_pstdb)
 # Define column names
 column_names = [
     "msstor", "msstrn", "mstrnc", "mstrnd", "mstype", "msvdno", "msvdnm", "msdept",
@@ -35,8 +87,8 @@ print(f"Running {table} at {timestamp} with {len(df)} rows")
 
 try:
     # Create database connection
-    engine_db2 = create_engine(db_connect.db_url_pstdb2)
-    conn = engine_db2.connect()
+
+    conn = engine2.connect()
     
     # Use chunks for efficient insertion
     chunk_size = 1000  # Adjust based on performance
@@ -71,7 +123,7 @@ df_record = df_record.groupby(["bu", "as_date","msstor"], as_index=False).agg({
       })
 df_record.rename(columns={'msstoh': 'soh','msstor': 'stcode','mssku': 'record'}, inplace=True)
 
-df_record.to_sql('check_record', engine_db2, if_exists='append', index=False)
+df_record.to_sql('check_record', engine2, if_exists='append', index=False)
 
 print(f"✅ Record data inserted into 'check_record' at {timestamp}")
 
@@ -84,7 +136,7 @@ query_block_all = text("""
                     select veno,sdpt from soh_b2s_block_veno where sdpt = 'all'
                    """
 )
-df_block_all = pd.read_sql(query_block_all, engine_db)
+df_block_all = pd.read_sql(query_block_all, engine1)
 
 # Merge and filter out blocked vendors
 df = df.merge(df_block_all, left_on='msvdno', right_on='veno', how='left', indicator=True)
@@ -97,7 +149,7 @@ df.drop(columns=['_merge', 'veno', 'sdpt'], inplace=True)
 query_block_sdpt = text("""
                     select veno,sdpt from soh_b2s_block_veno where sdpt != 'all'
                    """)
-df_block_sdpt = pd.read_sql(query_block_sdpt, engine_db)
+df_block_sdpt = pd.read_sql(query_block_sdpt, engine1)
 # Merge and filter out blocked vendors for specific sdpt
 df = df.merge(df_block_sdpt, left_on=['msvdno', 'mssdpt'], right_on=['veno', 'sdpt'], how='left', indicator=True)
 # Keep only rows not in blocked vendors for specific sdpt
@@ -124,7 +176,7 @@ df.rename(columns={"msstoh": "totalsoh"}, inplace=True)
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
 
 try:
-    df.to_sql(table_soh_update, engine_db, if_exists='append', index=False)
+    df.to_sql(table_soh_update, engine1, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
     os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))

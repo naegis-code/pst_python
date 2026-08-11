@@ -4,10 +4,44 @@ from datetime import datetime
 from tqdm import tqdm
 import os
 from sqlalchemy.exc import SQLAlchemyError
-from db_connect import db_url_pstdb,db_url_pstdb2
 from datetime import timedelta
 from pathlib import Path  # Import Path from pathlib
 import math
+from dotenv import load_dotenv, find_dotenv
+import socket
+import subprocess
+import time
+
+# ==================== โหลดค่าจาก .env ====================
+load_dotenv(find_dotenv())
+
+def is_port_open(host, port, timeout=2):
+    """เช็คว่าพอร์ต local เปิด (มีอะไร listening อยู่) หรือไม่"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        result = s.connect_ex((host, port))
+        return result == 0
+
+DB_HOST = "localhost"
+DB_PORT = 5432
+
+if is_port_open(DB_HOST, DB_PORT):
+    print(f"✅ พอร์ต {DB_PORT} ที่ {DB_HOST} เปิดอยู่ — tunnel ทำงานอยู่")
+else:
+    print(f"❌ พอร์ต {DB_PORT} ที่ {DB_HOST} ปิดอยู่ — tunnel ยังไม่เปิด")
+    subprocess.Popen(
+        "start /b ssh -f -N pst-db",
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+    print("🔑 กำลังเปิด SSH tunnel... (รอ 5 วินาที)")
+    time.sleep(5)
+    print("✅ SSH tunnel เปิดแล้ว") if is_port_open(DB_HOST, DB_PORT) else print("❌ SSH tunnel ยังไม่เปิด — ตรวจสอบการเชื่อมต่อ SSH")
+
+engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 timestamp_date = datetime.now().strftime('%Y%m%d')  # Use hyphens for file system safety
@@ -33,9 +67,6 @@ total_rows = total_lines - 1
 total_chunks = math.ceil(total_rows / chunksize)
 
 print(f"📄 Total rows: {total_rows:,} → Processing in {total_chunks} chunks")
-
-engine2 = create_engine(db_url_pstdb2)
-engine = create_engine(db_url_pstdb)
 
 # total rows csv
 with open(path, 'r', encoding='cp874', errors='ignore') as f:
@@ -87,7 +118,7 @@ df.rename(columns={"msstoh": "totalsoh"}, inplace=True)
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
 
 try:
-    df.to_sql(table_soh_update, engine, if_exists='append', index=False)
+    df.to_sql(table_soh_update, engine1, if_exists='append', index=False)
     print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
     os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))

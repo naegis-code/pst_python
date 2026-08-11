@@ -232,7 +232,10 @@ q_report_cfr = f"""
 df_report_cfr = pl.read_database_uri(q_report_cfr, engine3)
 print(f"✅ CFR report data retrieved successfully. Total rows: {len(df_report_cfr)}")
 
-df_report_cfr.write_csv(path_report)
+summary_report_cfr = df_plan.join(df_report_cfr, on=['stcode', 'cntdate'], how='left')
+print(f"✅ Data merged successfully. Total rows after merge: {len(df_report_cfr)}")
+
+summary_report_cfr.write_csv(path_report)
 
 q_dept_cfr = f"""
                 select 

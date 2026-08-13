@@ -87,7 +87,7 @@ q_report = f"""with bsale as (
     where cntdate between '{sdate}' and '{edate}'
     group by mdstor ,cntdate
     ), bmiss as (
-    select store,cntdate,new_phycnt_qty ,new_phycnt_amount ,qty_missrate ,amount_missrate
+    select store,cntdate,new_phycnt_qty ,new_phycnt_amount ,qty_missrate ,amount_missrate ,abs_first_qty ,abs_final_qty ,abs_first_amount ,abs_final_amount 
     from b2s_calculate_missrate bscm
     where cntdate between '{sdate}' and '{edate}'
     )
@@ -124,16 +124,30 @@ q_report = f"""with bsale as (
         m.new_phycnt_qty,
         m.new_phycnt_amount,
         m.qty_missrate,
-        m.amount_missrate
+        m.amount_missrate,
+        m.abs_first_qty,
+        m.abs_final_qty,
+        m.abs_first_amount,
+        m.abs_final_amount
     from b2s_stk_this_year bs
     left join bsale s on bs.store = s.stcode and bs.cntdate = s.cntdate and bs.skutype = s.skutype
     left join bmiss m on bs.store = m.store and bs.cntdate = m.cntdate
     where bs.cntdate between '{sdate}' and '{edate}'
-    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype ,s.sale, m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate
+    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype ,s.sale, m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate, m.abs_first_qty, m.abs_final_qty, m.abs_first_amount, m.abs_final_amount
     """
 
 df_report = pl.read_database_uri(q_report, engine3)
 print(f"✅ Report data retrieved successfully. Total rows: {len(df_report)}")
+
+query_mandays = f"""select stcode,to_char(cntdate,'yyyymmdd') as cntdate ,pst_percent ,store_percent ,out_percent 
+                    from b2s_manday_ratio bsmr
+                    where cntdate between '{sdate}' and '{edate}'"""
+
+df_mandays = pl.read_database_uri(query_mandays, engine1)
+print(f"✅ Mandays data retrieved successfully. Total rows: {len(df_mandays)}")
+
+df_report = df_report.join(df_mandays, left_on=['stcode', 'cntdate'], right_on=['stcode', 'cntdate'], how='left')
+print(df_report)
 
 df_report.write_csv(path_report)
 

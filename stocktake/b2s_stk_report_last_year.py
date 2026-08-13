@@ -87,7 +87,7 @@ q_report = f"""with bsale as (
     where cntdate between '{sdate}' and '{edate}'
     group by mdstor ,cntdate
     ), bmiss as (
-    select store,cntdate,new_phycnt_qty ,new_phycnt_amount ,qty_missrate ,amount_missrate  
+    select store,cntdate,new_phycnt_qty ,new_phycnt_amount ,qty_missrate ,amount_missrate  ,abs_first_qty ,abs_final_qty ,abs_first_amount ,abs_final_amount
     from b2s_calculate_missrate bscm
     where cntdate between '{sdate}' and '{edate}'
     )
@@ -124,12 +124,16 @@ q_report = f"""with bsale as (
         m.new_phycnt_qty,
         m.new_phycnt_amount,
         m.qty_missrate,
-        m.amount_missrate
+        m.amount_missrate,
+        m.abs_first_qty,
+        m.abs_final_qty,
+        m.abs_first_amount,
+        m.abs_final_amount
     from b2s_stk bs
     left join bsale s on bs.store = s.stcode and bs.cntdate = s.cntdate and bs.skutype = s.skutype
     left join bmiss m on bs.store = m.store and bs.cntdate = m.cntdate
     where bs.cntdate between '{sdate}' and '{edate}'
-    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype ,s.sale, m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate
+    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype ,s.sale, m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate, m.abs_first_qty, m.abs_final_qty, m.abs_first_amount, m.abs_final_amount
     """
 
 df_report = pl.read_database_uri(q_report, engine1)

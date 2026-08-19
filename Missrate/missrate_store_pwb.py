@@ -2,8 +2,8 @@ import pandas as pd
 from sqlalchemy import create_engine,text
 import datetime
 
-user = ''
-password = ''
+user = 'prthanapat'
+password = '20020015'
 date_start_manual = '20260101'
 date_end_manual = '20261231'
 
@@ -25,6 +25,13 @@ table_type = 'var'
 table_bu = f'{bu.lower()}_{table_type.lower()}_this_year'
 table_missrate = 'missrate_store'
 
+update_query = text(f"""
+    update {table_bu} set bu = 'PWB', skutype = prtype, stcode = substring(cntnum,0,6), cntdate = '20'||substring(cntnum,11,2) ||substring(cntnum,9,2) ||substring(cntnum, 7,2)
+    where bu is null;
+""")
+with db3.begin() as conn:
+    conn.execute(update_query)
+    print("Data preparation completed successfully.")
 
 query = text(f"""
             select stcode ,

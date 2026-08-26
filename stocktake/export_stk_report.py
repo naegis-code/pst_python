@@ -41,6 +41,7 @@ engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.geten
 
 query_stk_report = f"""select bu,stcode,cntdate,skutype,rpname,sku,sgain,sloss,psoh,pqty,pgain,ploss,vsoh,vqty,vgain,vloss,vrsoh,vrqty,vrgain,vrloss from stk_report"""
 query_sdept_report = f"""select bu,stcode,skutype,rpname,dept,subdept,sku,sgain,sloss,psoh,pqty,pgain,ploss,vsoh,vqty,vgain,vloss,vrsoh,vrqty,vrgain,vrloss from stk_report_subdept"""
+query
 
 df = pl.read_database(query_stk_report, engine3)
 df2 = pl.read_database(query_sdept_report, engine3)

@@ -2,11 +2,19 @@ import pyautogui as py
 import os
 import time
 from datetime import datetime, timedelta
-import user_pass as up
 import pathlib
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+user = os.getenv('b2s_user')
+password = os.getenv('b2s_pass')
+
+print(f"User: {user}")
+print(f"Password: {password}")
 
 userpath = user_path = pathlib.Path.home()
-save_path = userpath / 'Downloads' / 'ofm_soh.csv'
+save_path = userpath / 'Downloads' / 'b2s_soh.csv'
 path = r"C:\Program Files (x86)\IBM\Client Access\cwbtf.exe"
 
 os.remove(save_path) if save_path.exists() else None
@@ -20,7 +28,7 @@ if windows:
     windows[0].activate()
     py.write('ODTHAI')
     py.press('tab')
-    py.write('MMODTUSR/MGRSTK(OHOSTRTPP)')
+    py.write('MMB2SUSR/MGRSTK(BHOSTRTPP)')
     py.press('tab', presses=3)
     py.write('f')
     py.press('tab')
@@ -35,10 +43,10 @@ if windows:
     py.write(str(save_path))
     py.press('enter')
     time.sleep(1)
-    py.write(up.ofm_user)
+    py.write(user)
     py.press('tab')
     time.sleep(0.5)
-    py.write(up.ofm_pass)
+    py.write(password)
     py.press('enter')
     time.sleep(3)
 else:

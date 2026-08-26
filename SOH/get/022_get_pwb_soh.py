@@ -2,11 +2,11 @@ import pyautogui as pg
 import os
 import time
 from datetime import datetime, timedelta
-from user_pass import *
 from dotenv import load_dotenv,find_dotenv
 
 load_dotenv(find_dotenv())
 
+url = os.getenv('pwb_url')
 user = os.getenv('pwb_user')
 passwd = os.getenv('pwb_pass')
 
@@ -15,7 +15,7 @@ os.system('start "" "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%d%m%y')
 
 time.sleep(2)
-pg.write(os.getenv('pwb_url'))
+pg.write(url)
 pg.press('enter')
 pg.sleep(5)
 pg.write(user)

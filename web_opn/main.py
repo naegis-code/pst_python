@@ -1,9 +1,10 @@
 import io
 import json
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, status
 import pandas as pd
 from sqlalchemy import create_engine, text
-from upload_chg_stk import process_chg_stk
+from pydantic import BaseModel
+from upload_chg import process_chg_stk,process_chg_var,process_chg_nocount,process_chg_zerocount
 
 app = FastAPI()
 
@@ -22,6 +23,28 @@ engine3 = create_engine(
     max_overflow=20,
 )
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/login")
+async def login(data: LoginRequest):
+    # ตัวอย่างการตรวจสอบรหัสผ่าน (ควรเปลี่ยนไปค้นหาใน DB และเช็ค Hash ด้วย bcrypt)
+    query = text("SELECT 1 FROM auth_user WHERE username = :username and password = :password")
+    with engine3.connect() as conn:
+        result = conn.execute(query, {"username": data.username, "password": data.password})
+        if result.fetchone():
+            return {
+                "status": "success",
+                "message": "Login successful",
+                "access_token": "your_generated_jwt_token_here",
+                "user": {"username": data.username, "role": "admin"}
+            }
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง"
+    )
 
 @app.get("/api/stores")
 def get_stores(cntdate: str):
@@ -75,6 +98,7 @@ async def upload_report(
     rpname: str = Form(...),
     skutype: str = Form(...),
     file: UploadFile = File(...),
+    username: str = Form(...),
 ):
     # 1. ตรวจสอบนามสกุลไฟล์
     if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
@@ -84,25 +108,65 @@ async def upload_report(
 
     try:
         contents = await file.read()
-        df = pd.read_excel(io.BytesIO(contents), sheet_name=0)
-        df.columns = df.columns.str.strip().str.lower()
-        print(df)
-        if df.empty:
+
+        if len(contents) == 0:
             raise HTTPException(status_code=400, detail="ไฟล์ไม่มีข้อมูล")
 
         # 🎯 เช็คเงื่อนไข bu == 'CHG' และ rpname ขึ้นต้นด้วย 'STK'
         if bu.upper() == "CHG" and rpname.upper().startswith("STK"):
             record_count = process_chg_stk(
-                df=df,
+                file_contents=contents,  # ส่ง bytes เข้าไปแทน df,
                 bu=bu,
                 stcode=stcode,
                 cntdate=cntdate,
                 rpname=rpname,
                 skutype=skutype,
-                engine3=engine3
+                engine3=engine3,
+                username=username
             )
+
+        # 🎯 เช็คเงื่อนไข bu == 'CHG' และ rpname ขึ้นต้นด้วย 'VAR'
+        elif bu.upper() == "CHG" and rpname.upper().startswith("VAR"):
+            record_count = process_chg_var(
+                file_contents=contents,  # ส่ง bytes เข้าไปแทน df,
+                bu=bu,
+                stcode=stcode,
+                cntdate=cntdate,
+                rpname=rpname,
+                skutype=skutype,
+                engine3=engine3,
+                username=username
+            )
+
+        # 🎯 เช็คเงื่อนไข bu == 'CHG' และ rpname ขึ้นต้นด้วย 'NOC'
+        elif bu.upper() == "CHG" and rpname.upper().startswith("NOC"):
+            record_count = process_chg_nocount(
+                file_contents=contents,  # ส่ง bytes เข้าไปแทน df,
+                bu=bu,
+                stcode=stcode,
+                cntdate=cntdate,
+                rpname=rpname,
+                skutype=skutype,
+                engine3=engine3,
+                username=username
+            )
+
+        # 🎯 เช็คเงื่อนไข bu == 'CHG' และ rpname ขึ้นต้นด้วย 'ZEC'
+        elif bu.upper() == "CHG" and rpname.upper().startswith("ZEC"):
+            record_count = process_chg_zerocount(
+                file_contents=contents,  # ส่ง bytes เข้าไปแทน df,
+                bu=bu,
+                stcode=stcode,
+                cntdate=cntdate,
+                rpname=rpname,
+                skutype=skutype,
+                engine3=engine3,
+                username=username
+            )
+
         else:
             # Code สำหรับ Logic การอัปโหลดแบบปกติ
+            df = pd.read_excel(io.BytesIO(contents), sheet_name=0)
             record_count = len(df)
 
         return {

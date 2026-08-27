@@ -124,9 +124,13 @@ if df_report.empty:
 # ---------------------------------------------------------
 @st.dialog("จัดการข้อมูลรายงาน")
 def upload_dialog(bu, stcode, cntdate, rpname, skutype, has_data=False):
+    # 🎯 ดึงชื่อผู้ใช้งานจาก session_state
+    current_user = st.session_state.get("username", "Guest")
+    
     action_title = "แก้ไขข้อมูล" if has_data else "อัปโหลดข้อมูลใหม่"
     st.write(f"📌 **รายงาน:** `{rpname}-{skutype}` ({action_title})")
     st.write(f"🏢 **BU:** {bu} | **Store:** {stcode} | **Date:** {cntdate}")
+    st.write(f"👤 **ผู้ดำเนินการ:** {current_user}")
 
     if has_data:
         st.info("ℹ️ การอัปโหลดไฟล์ใหม่จะทำการแทนที่ (Replace) ข้อมูลเดิม")
@@ -147,6 +151,7 @@ def upload_dialog(bu, stcode, cntdate, rpname, skutype, has_data=False):
                     "cntdate": str(cntdate),
                     "rpname": rpname,
                     "skutype": skutype,
+                    "username": current_user,  # 👈 แนบ username ไปยัง FastAPI Form Data
                 }
                 files = {
                     "file": (
@@ -161,13 +166,20 @@ def upload_dialog(bu, stcode, cntdate, rpname, skutype, has_data=False):
                 )
 
                 if res_upload.status_code == 200:
-                    result = res_upload.json()
-                    st.success(f"🎉 {result['message']}")
-                    st.rerun()
+                    try:
+                        result = res_upload.json()
+                        st.success(f"🎉 {result.get('message', 'อัปโหลดสำเร็จ')}")
+                        st.rerun()
+                    except Exception:
+                        st.success("🎉 อัปโหลดสำเร็จเรียบร้อยแล้ว")
+                        st.rerun()
                 else:
-                    err_detail = res_upload.json().get(
-                        "detail", "เกิดข้อผิดพลาด"
-                    )
+                    # ป้องกัน JSONDecodeError กรณี Server ตอบกลับมาเป็น HTML หรือ Text เปล่า
+                    try:
+                        err_detail = res_upload.json().get("detail", "เกิดข้อผิดพลาดไม่ทราบสาเหตุ")
+                    except Exception:
+                        err_detail = res_upload.text if res_upload.text else f"เกิดข้อผิดพลาดจาก Server (Status Code: {res_upload.status_code})"
+                    
                     st.error(f"❌ {err_detail}")
 
 

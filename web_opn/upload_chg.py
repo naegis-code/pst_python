@@ -247,13 +247,15 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
 def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str, rpname: str, skutype: str, engine3, username: str):
 
     usecols = [
-        'BUNAME','REPNAME','PRINTDATE','SKU','IBC','SBC','PRNAME','BNDNAME','MODEL','CNT','VARIANCE','LOCATION','TOTAL','DEPT']
+        'BUName','RepName','PrintDate','SKU','IBC','SBC','รายละเอียด','ยี่ห้อ','รุ่น','Cnt','Variance','Location','Total','Dept']
 
     col_str = [
-        'buname','repname','printdate','sku','ibc','sbc','prname','bndname','model','location','dept']
+        'buname','repname','printdate','sku','ibc','sbc','รายละเอียด','ยี่ห้อ','รุ่น','location','dept']
     
     col_num = [
         'cnt','variance','total']
+
+    
 
     clean_cntdate = cntdate.replace("-", "")
     
@@ -267,7 +269,7 @@ def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str
         raise ValueError(f"Error reading Excel file: {e}")
 
     df.columns = df.columns.str.strip().str.lower()
-
+    df.rename(columns={'รายละเอียด': 'prname', 'ยี่ห้อ': 'bndname', 'รุ่น': 'model'}, inplace=True)
     # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
     for col in col_str:
         if col in df.columns:
@@ -354,10 +356,10 @@ def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str
 def process_chg_zerocount(file_contents: bytes, bu: str, stcode: str, cntdate: str, rpname: str, skutype: str, engine3, username: str):
 
     usecols = [
-        'BUNAME','REPNAME','PRINTDATE','SKU','IBC','SBC','PRNAME','BNDNAME','MODEL','CNT','VARIANCE','LOCATION','TOTAL','DEPT']
+        'BUName','RepName','PrintDate','SKU','IBC','SBC','รายละเอียด','ยี่ห้อ','รุ่น','Cnt','Variance','Location','Total','Dept']
 
     col_str = [
-        'buname','repname','printdate','sku','ibc','sbc','prname','bndname','model','location','dept']
+        'buname','repname','printdate','sku','ibc','sbc','รายละเอียด','ยี่ห้อ','รุ่น','location','dept']
     
     col_num = [
         'cnt','variance','total']
@@ -374,7 +376,7 @@ def process_chg_zerocount(file_contents: bytes, bu: str, stcode: str, cntdate: s
         raise ValueError(f"Error reading Excel file: {e}")
 
     df.columns = df.columns.str.strip().str.lower()
-
+    df.rename(columns={'รายละเอียด': 'prname', 'ยี่ห้อ': 'bndname', 'รุ่น': 'model'}, inplace=True)
     # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
     for col in col_str:
         if col in df.columns:

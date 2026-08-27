@@ -20,4 +20,4 @@ def auto_click(range,timesleep):
         pag.click()  # Perform a mouse click
         time.sleep(timesleep)  # Wait for the specified time before the next click
 
-auto_click(range(1000), 0.0001)  # Click 100 times with a 0.1-second interval
+auto_click(range(2000), 0.0001)  # Click 100 times with a 0.1-second interval

@@ -31,7 +31,8 @@ def process_chg_stk(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
         df = pd.read_excel(
             io.BytesIO(file_contents),
             sheet_name=0,
-            usecols=usecols
+            usecols=usecols,
+            dtype=str
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")
@@ -160,7 +161,8 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
         df = pd.read_excel(
             io.BytesIO(file_contents),
             sheet_name=0,
-            usecols=usecols
+            usecols=usecols,
+            dtype=str
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")
@@ -263,7 +265,8 @@ def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str
         df = pd.read_excel(
             io.BytesIO(file_contents),
             sheet_name=0,
-            usecols=usecols
+            usecols=usecols,
+            dtype=str
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")
@@ -370,7 +373,8 @@ def process_chg_zerocount(file_contents: bytes, bu: str, stcode: str, cntdate: s
         df = pd.read_excel(
             io.BytesIO(file_contents),
             sheet_name=0,
-            usecols=usecols
+            usecols=usecols,
+            dtype=str
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")

@@ -135,7 +135,7 @@ def process_chg_stk(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
                 conn.execute(delete_query_stk_report_subdept, params)
             
             # 🎯 ย้ายออกมาข้างนอก if exists: เพื่อให้ทำงานเสมอไม่ว่าข้อมูลจะเคยมีหรือยังไม่เคยมีก็ตาม
-            df.to_sql('chg_stk_this_year', conn, if_exists='append', index=False)
+            df.to_sql('chg_stk_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
             stk_report.to_sql('stk_report', conn, if_exists='append', index=False)
             stk_report_subdept.to_sql('stk_report_subdept', conn, if_exists='append', index=False)
 
@@ -241,7 +241,7 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
                     conn.execute(delete_report_query, params)
                 
                 # 🎯 ส่ง conn เข้าไปใน to_sql แทน engine3 เพื่อให้อยู่ใน Transaction เดียวกัน
-                df.to_sql('chg_var_this_year', conn, if_exists='append', index=False)
+                df.to_sql('chg_var_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
                 var_report.to_sql('var_report', conn, if_exists='append', index=False)
 
     return len(df)
@@ -351,7 +351,7 @@ def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str
                     conn.execute(delete_subdept_query, params)
                 
                 # 🎯 ส่ง conn เข้าไปใน to_sql แทน engine3 เพื่อให้อยู่ใน Transaction เดียวกัน
-                df.to_sql('chg_nocount_this_year', conn, if_exists='append', index=False)
+                df.to_sql('chg_nocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
                 report.to_sql('noc_zec_report', conn, if_exists='append', index=False)
                 subdept.to_sql('noc_zec_report_subdept', conn, if_exists='append', index=False)
 
@@ -461,7 +461,7 @@ def process_chg_zerocount(file_contents: bytes, bu: str, stcode: str, cntdate: s
                     conn.execute(delete_subdept_query, params)
                 
                 # 🎯 ส่ง conn เข้าไปใน to_sql แทน engine3 เพื่อให้อยู่ใน Transaction เดียวกัน
-                df.to_sql('chg_zerocount_this_year', conn, if_exists='append', index=False)
+                df.to_sql('chg_zerocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
                 report.to_sql('noc_zec_report', conn, if_exists='append', index=False)
                 subdept.to_sql('noc_zec_report_subdept', conn, if_exists='append', index=False)
 

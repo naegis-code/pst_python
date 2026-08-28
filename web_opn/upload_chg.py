@@ -39,10 +39,10 @@ def process_chg_stk(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
 
     df.columns = df.columns.str.strip().str.lower()
 
-    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
+    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string โดยคงค่าว่างเดิมไว้
     for col in col_str:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].astype("string").str.strip()
 
     # แปลงคอลัมน์ตัวเลขให้เป็น float ทั้งหมด (ป้องกัน ufunc error)
     for col in col_num:
@@ -169,10 +169,10 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
 
     df.columns = df.columns.str.strip().str.lower()
 
-    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
+    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string โดยคงค่าว่างเดิมไว้
     for col in col_str:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].astype("string").str.strip()
 
     # แปลงคอลัมน์ตัวเลขให้เป็น float ทั้งหมด
     for col in col_num:
@@ -273,10 +273,11 @@ def process_chg_nocount(file_contents: bytes, bu: str, stcode: str, cntdate: str
 
     df.columns = df.columns.str.strip().str.lower()
     df.rename(columns={'รายละเอียด': 'prname', 'ยี่ห้อ': 'bndname', 'รุ่น': 'model'}, inplace=True)
-    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
+
+    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string โดยคงค่าว่างเดิมไว้
     for col in col_str:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].astype("string").str.strip()
 
     # แปลงคอลัมน์ตัวเลขให้เป็น float ทั้งหมด
     for col in col_num:
@@ -381,10 +382,11 @@ def process_chg_zerocount(file_contents: bytes, bu: str, stcode: str, cntdate: s
 
     df.columns = df.columns.str.strip().str.lower()
     df.rename(columns={'รายละเอียด': 'prname', 'ยี่ห้อ': 'bndname', 'รุ่น': 'model'}, inplace=True)
-    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string
+    
+    # แปลงคอลัมน์ข้อความให้อยู่ในรูป string โดยคงค่าว่างเดิมไว้
     for col in col_str:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].astype("string").str.strip()
 
     # แปลงคอลัมน์ตัวเลขให้เป็น float ทั้งหมด
     for col in col_num:

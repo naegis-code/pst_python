@@ -9,7 +9,7 @@ df = pd.read_excel("D:\\Users\\prthanap\\Documents\\Book1.xlsx", sheet_name="She
 # สร้างตัวอย่าง DataFrame ตามโครงสร้างของคุณ
 # (ต้องมีคอลัมน์: 'รหัสนักงาน', 'ชื่อ-สกุล', 'Hub', 'Gen')
 
-def divide_into_teams(df, num_teams=9):
+def divide_into_teams(df, num_teams=10):
     # รวมกลุ่มตาม (Gen, Hub) เพื่อกระจายความหลากหลาย
     # จัดเรียงจากกลุ่มที่มีจำนวนคนน้อยไปมาก
     grouped = df.groupby(['Gen', 'Hub'])
@@ -45,8 +45,7 @@ def divide_into_teams(df, num_teams=9):
 
 # ตัวอย่างการใช้งาน:
 result_df = divide_into_teams(df)
-print(result_df)
-result_df.to_excel("D:\\Users\\prthanap\\Documents\\Book2.xlsx")  # บันทึกผลลัพธ์กลับไปยังไฟล์ Excel
+result_df.to_excel("D:\\Users\\prthanap\\Documents\\รายชื่อทีม outting 2026.xlsx")  # บันทึกผลลัพธ์กลับไปยังไฟล์ Excel
 
 # ตรวจสอบความสมดุลของแต่ละทีม:
 print(pd.crosstab(result_df['Team'], result_df['Gen'])) # เช็คจำนวน ชาย/หญิง

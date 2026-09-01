@@ -168,7 +168,6 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
         raise ValueError(f"Error reading Excel file: {e}")
 
     df.columns = df.columns.str.strip().str.lower()
-
     # แปลงคอลัมน์ข้อความให้อยู่ในรูป string โดยคงค่าว่างเดิมไว้
     for col in col_str:
         if col in df.columns:
@@ -196,51 +195,127 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
     if (df['skutype'] != skutype).any():
         raise ValueError("Some skutype values do not match the provided skutype.")
     
-    # คำนวณ var_report
-    df_var = df.copy()
-    var_report = df_var.groupby(
+    # 1. คำนวณ var_report
+    var_report = df.groupby(
         ['bu', 'stcode', 'cntdate', 'skutype', 'rpname'],
         as_index=False
-    ).agg(
-        pqty=('cntqnt', 'sum'),
-    )
-    
-    # Database Operations
+    ).agg(pqty=('cntqnt', 'sum'))
+
+    # 2. คำนวณ df_nocount
+    df_nocount = df[df['location'].isna()].copy()
+    if not df_nocount.empty:
+        df_nocount = df_nocount[['bu', 'stcode', 'cntdate', 'skutype', 'prndate', 'prname', 'deptcode', 'location','skcode','baribc','bndname','model','barsbc1','variance','rpname','username']]
+        df_nocount.rename(columns={'baribc': 'ibc','barsbc1': 'sbc','prndate': 'printdate'}, inplace=True)
+        df_nocount['cnt'] = 0
+        df_nocount['buname'] = ''
+        df_nocount['total'] = df_nocount['variance']
+        df_nocount['deptcode'] = df_nocount['deptcode'].str[0:4]
+        df_nocount['rpname'] = 'NOC' + df_nocount['rpname'].str[3:4]
+
+    # 3. คำนวณ df_zerocount (ใช้ dropna=False เพื่อป้องกันบรรทัดหายเนื่องจาก model เป็น NaN)
+    df_zerocount = df[df['location'].notna()].copy()
+    if not df_zerocount.empty:
+        # ดึง printdate แถวแรกแบบปลอดภัย
+        df_zerocount['printdate'] = df_zerocount['prndate'].dropna().iloc[0] if not df_zerocount['prndate'].dropna().empty else ''
+        
+        df_zerocount = df_zerocount.groupby(
+            ['bu', 'stcode', 'cntdate', 'skutype','printdate', 'prname', 'deptcode','skcode', 'baribc','bndname','model','barsbc1','variance','rpname','username'],
+            as_index=False, dropna=False
+        ).agg(cntqnt=('cntqnt', 'sum'))
+
+        df_zerocount.rename(columns={'baribc': 'ibc','barsbc1': 'sbc'}, inplace=True)
+        df_zerocount = df_zerocount[df_zerocount['cntqnt'] == 0].copy()
+        df_zerocount['location'] = ''
+        df_zerocount['buname'] = ''
+        df_zerocount['total'] = df_zerocount['variance']
+        df_zerocount['deptcode'] = df_zerocount['deptcode'].str[0:4]
+        df_zerocount['rpname'] = 'ZEC' + df_zerocount['rpname'].str[3:4]
+
+    # --- Database Operations ---
     if not df.empty:
+        # เตรียม Parameter สำหรับ SQL Queries (ดึง dynamic value มาใส่ล่วงหน้า)
+        noc_rpname = df_nocount['rpname'].iloc[0] if not df_nocount.empty else f"NOC{rpname[3:4]}"
+        zec_rpname = df_zerocount['rpname'].iloc[0] if not df_zerocount.empty else f"ZEC{rpname[3:4]}"
+
         params = {
             "bu": bu, 
             "stcode": stcode, 
             "cntdate": clean_cntdate, 
             "rpname": rpname,
-            "skutype": skutype
+            "skutype": skutype,
+            "noc_rpname": noc_rpname,
+            "zec_rpname": zec_rpname
         }
-        
-        # ค้นหาโดยไม่ล็อก skutype เพื่อรองรับกรณีในไฟล์มีหลาย skutype
+
+        query_dept = text("""
+            SELECT DISTINCT ON (SUBSTRING(subdept, 1, 4)) subdept, SUBSTRING(subdept, 1, 4) as deptcode
+            FROM stk_report_subdept
+            ORDER BY SUBSTRING(subdept, 1, 4), subdept
+        """)
+
         select_query = text("""
             SELECT 1 FROM chg_var_this_year 
-            WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname and skutype = :skutype
+            WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname AND skutype = :skutype
         """)
         
         update_query = text("""
-            UPDATE chg_var_this_year SET bu = concat(:bu, 'E') 
-            WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname and skutype = :skutype
+            UPDATE chg_var_this_year SET bu = concat(:bu, 'E') WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname AND skutype = :skutype;
+            UPDATE chg_nocount_this_year SET bu = concat(:bu, 'E') WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :noc_rpname AND skutype = :skutype;
+            UPDATE chg_zerocount_this_year SET bu = concat(:bu, 'E') WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :zec_rpname AND skutype = :skutype;
         """)
         
         delete_report_query = text("""
-            DELETE FROM var_report 
-            WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname and skutype = :skutype  
+            DELETE FROM var_report WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname = :rpname AND skutype = :skutype;
+            DELETE FROM noc_zec_report WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname IN (:noc_rpname, :zec_rpname) AND skutype = :skutype;
+            DELETE FROM noc_zec_report_subdept WHERE bu = :bu AND stcode = :stcode AND cntdate = :cntdate AND rpname IN (:noc_rpname, :zec_rpname) AND skutype = :skutype;
         """)
 
         with engine3.connect() as conn:
-            with conn.begin():  # Auto Commit Transaction ทั้งหมดในบล็อกนี้
+            with conn.begin():  # Auto Commit/Rollback ทั้งหมดใน Transaction เดียว
                 result = conn.execute(select_query, params)
                 exists = result.fetchone() is not None
-                
+                result.close()  # ปิด Cursor เพื่อความปลอดภัย
+
                 if exists:
                     conn.execute(update_query, params)
                     conn.execute(delete_report_query, params)
-                
-                # 🎯 ส่ง conn เข้าไปใน to_sql แทน engine3 เพื่อให้อยู่ใน Transaction เดียวกัน
+
+                # ดึงแผนกย่อย
+                dept_list = pd.read_sql(query_dept, conn)
+
+                # Process df_nocount reports
+                if not df_nocount.empty:
+                    df_nocount = df_nocount.merge(dept_list, on='deptcode', how='left')
+                    df_nocount['repname'] = 'รายงาน No count Report แผนก ' + df_nocount['subdept'].fillna('')
+                    df_nocount.rename(columns={'skcode': 'sku', 'subdept': 'dept'}, inplace=True)
+                    df_nocount.drop(columns=['deptcode'], inplace=True)
+                    
+                    df_nocount_report = df_nocount.groupby(['bu', 'stcode', 'cntdate', 'skutype', 'rpname'], as_index=False).agg(pqty=('sku', 'count'))
+                    df_nocount_report_subdept = df_nocount.groupby(['bu', 'stcode', 'cntdate', 'skutype', 'rpname', 'dept'], as_index=False).agg(pqty=('sku', 'count'))
+                    df_nocount_report_subdept['subdept'] = df_nocount_report_subdept['dept'].str[:4]
+                    df_nocount_report_subdept.drop(columns=['dept'], inplace=True)
+
+                    df_nocount.to_sql('chg_nocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
+                    df_nocount_report.to_sql('noc_zec_report', conn, if_exists='append', index=False)
+                    df_nocount_report_subdept.to_sql('noc_zec_report_subdept', conn, if_exists='append', index=False)
+
+                # Process df_zerocount reports
+                if not df_zerocount.empty:
+                    df_zerocount = df_zerocount.merge(dept_list, on='deptcode', how='left')
+                    df_zerocount['repname'] = 'รายงาน Zero count Report แผนก ' + df_zerocount['subdept'].fillna('')
+                    df_zerocount.rename(columns={'skcode': 'sku', 'subdept': 'dept'}, inplace=True)
+                    df_zerocount.drop(columns=['deptcode'], inplace=True)
+                    
+                    df_zerocount_report = df_zerocount.groupby(['bu', 'stcode', 'cntdate', 'skutype', 'rpname'], as_index=False).agg(pqty=('sku', 'count'))
+                    df_zerocount_report_subdept = df_zerocount.groupby(['bu', 'stcode', 'cntdate', 'skutype', 'rpname', 'dept'], as_index=False).agg(pqty=('sku', 'count'))
+                    df_zerocount_report_subdept['subdept'] = df_zerocount_report_subdept['dept'].str[:4]
+                    df_zerocount_report_subdept.drop(columns=['dept'], inplace=True)
+
+                    df_zerocount.to_sql('chg_zerocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
+                    df_zerocount_report.to_sql('zerocount_report', conn, if_exists='append', index=False)
+                    df_zerocount_report_subdept.to_sql('zerocount_report_subdept', conn, if_exists='append', index=False)
+
+                # Write Main Data
                 df.to_sql('chg_var_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
                 var_report.to_sql('var_report', conn, if_exists='append', index=False)
 

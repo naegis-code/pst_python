@@ -64,10 +64,6 @@ if bu == "CHG":
         ("VAR1", "Consign"),
         ("VAR2", "Credit"),
         ("VAR2", "Consign"),
-        ("NOC2", "Credit"),
-        ("NOC2", "Consign"),
-        ("ZEC2", "Credit"),
-        ("ZEC2", "Consign"),
     ]
 elif bu == "PWB":
     table_stk = f"{bu.lower()}_stk_this_year"

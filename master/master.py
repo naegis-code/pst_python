@@ -18,8 +18,12 @@ filename = "new_master_book1.xlsx"
 pathfile = f"{path}/{filename}"
 
 # 1. อ่านและจัดการข้อมูล Pandas DataFrame
-df = pd.read_excel(pathfile, dtype=str)
+df = pd.read_excel(pathfile, dtype=str).replace(to_replace=[r',', r'\r', r'\n'], value='', regex=True).apply(lambda col: col.str.strip())
 df = df[["barcode", "unit", "sku", "item_name", "unit_cost"]]
+
+# 2. เติม 0 ด้านหน้า (Left Pad) ให้ sku และ barcode เป็น 13 หลัก
+df["sku"] = df["sku"].str.zfill(13)
+df["barcode"] = df["barcode"].str.zfill(13)
 
 df_master0 = df.drop_duplicates(subset=["sku"], keep="first").copy()
 df_master0["barcode"] = df_master0["sku"]
@@ -44,7 +48,7 @@ df_master = df_master.rename(
 
 print(df_master)
 
-# 2. จัดการฐานข้อมูล SQLite
+# 3. จัดการฐานข้อมูล SQLite
 # VACUUM นอก transaction (ใช้ execution_options เพื่อ autocommit)
 with engine.connect() as conn:
   conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("VACUUM;"))
@@ -86,10 +90,10 @@ print(
     f" {len(df_master)}"
 )
 
-# 3. คืน Connection Pool ก่อนทำการ Copy ไฟล์
+# 4. คืน Connection Pool ก่อนทำการ Copy ไฟล์
 engine.dispose()
 
-# 4. สร้างชื่อไฟล์ใหม่ตามฟอร์แมต {master}_{stocktakeid}_{yyyymmddhhmm}.db
+# 5. สร้างชื่อไฟล์ใหม่ตามฟอร์แมต {master}_{stocktakeid}_{yyyymmddhhmm}.db
 current_time = datetime.now().strftime("%Y%m%d%H%M")
 folder_path = os.path.dirname(master)
 

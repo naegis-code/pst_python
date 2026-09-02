@@ -32,7 +32,8 @@ def process_chg_stk(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
             io.BytesIO(file_contents),
             sheet_name=0,
             usecols=usecols,
-            dtype=str
+            dtype=str,
+            keep_default_na=False
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")
@@ -162,7 +163,8 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
             io.BytesIO(file_contents),
             sheet_name=0,
             usecols=usecols,
-            dtype=str
+            dtype=str,
+            keep_default_na=False
         )
     except Exception as e:
         raise ValueError(f"Error reading Excel file: {e}")
@@ -202,7 +204,7 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
     ).agg(pqty=('cntqnt', 'sum'))
 
     # 2. คำนวณ df_nocount
-    df_nocount = df[df['location'].isna()].copy()
+    df_nocount = df[df['location'].str.strip() == ""].copy()
     if not df_nocount.empty:
         df_nocount = df_nocount[['bu', 'stcode', 'cntdate', 'skutype', 'prndate', 'prname', 'deptcode', 'location','skcode','baribc','bndname','model','barsbc1','variance','rpname','username']]
         df_nocount.rename(columns={'baribc': 'ibc','barsbc1': 'sbc','prndate': 'printdate'}, inplace=True)
@@ -213,7 +215,7 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
         df_nocount['rpname'] = 'NOC' + df_nocount['rpname'].str[3:4]
 
     # 3. คำนวณ df_zerocount (ใช้ dropna=False เพื่อป้องกันบรรทัดหายเนื่องจาก model เป็น NaN)
-    df_zerocount = df[df['location'].notna()].copy()
+    df_zerocount = df[df['location'].str.strip() != ""].copy()
     if not df_zerocount.empty:
         # ดึง printdate แถวแรกแบบปลอดภัย
         df_zerocount['printdate'] = df_zerocount['prndate'].dropna().iloc[0] if not df_zerocount['prndate'].dropna().empty else ''
@@ -221,10 +223,10 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
         df_zerocount = df_zerocount.groupby(
             ['bu', 'stcode', 'cntdate', 'skutype','printdate', 'prname', 'deptcode','skcode', 'baribc','bndname','model','barsbc1','variance','rpname','username'],
             as_index=False, dropna=False
-        ).agg(cntqnt=('cntqnt', 'sum'))
+        ).agg(cnt=('cntqnt', 'sum'))
 
         df_zerocount.rename(columns={'baribc': 'ibc','barsbc1': 'sbc'}, inplace=True)
-        df_zerocount = df_zerocount[df_zerocount['cntqnt'] == 0].copy()
+        df_zerocount = df_zerocount[df_zerocount['cnt'] == 0]
         df_zerocount['location'] = ''
         df_zerocount['buname'] = ''
         df_zerocount['total'] = df_zerocount['variance']
@@ -278,10 +280,13 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
 
                 if exists:
                     conn.execute(update_query, params)
+                    
                     conn.execute(delete_report_query, params)
+                    
 
                 # ดึงแผนกย่อย
                 dept_list = pd.read_sql(query_dept, conn)
+                print("Retrieved department list")
 
                 # Process df_nocount reports
                 if not df_nocount.empty:
@@ -298,6 +303,7 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
                     df_nocount.to_sql('chg_nocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
                     df_nocount_report.to_sql('noc_zec_report', conn, if_exists='append', index=False)
                     df_nocount_report_subdept.to_sql('noc_zec_report_subdept', conn, if_exists='append', index=False)
+                    
 
                 # Process df_zerocount reports
                 if not df_zerocount.empty:
@@ -312,12 +318,15 @@ def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rp
                     df_zerocount_report_subdept.drop(columns=['dept'], inplace=True)
 
                     df_zerocount.to_sql('chg_zerocount_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
-                    df_zerocount_report.to_sql('zerocount_report', conn, if_exists='append', index=False)
-                    df_zerocount_report_subdept.to_sql('zerocount_report_subdept', conn, if_exists='append', index=False)
+                    df_zerocount_report.to_sql('noc_zec_report', conn, if_exists='append', index=False)
+                    df_zerocount_report_subdept.to_sql('noc_zec_report_subdept', conn, if_exists='append', index=False)
+                    
 
                 # Write Main Data
                 df.to_sql('chg_var_this_year', conn, if_exists='append', index=False, method='multi', chunksize=1000)
+                
                 var_report.to_sql('var_report', conn, if_exists='append', index=False)
+                
 
     return len(df)
 

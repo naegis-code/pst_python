@@ -1,7 +1,6 @@
 import os
 import pyautogui
 import time
-from user_pass import *
 import pathlib
 from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv

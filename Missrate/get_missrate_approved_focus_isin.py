@@ -10,9 +10,9 @@ cntdate_threshold = pd.to_datetime(cntdate, errors='coerce')
 
 
 stcode_cntdate = [
-    ('228','20260619'),
-    ('219','20260620'),
-    ('249','20260627'),
+    ('232','20260811'),
+    ('520','20260815'),
+    ('054','20260820'),
 ]
 
 cond_df = pd.DataFrame(stcode_cntdate, columns=['stcode', 'cntdate'])

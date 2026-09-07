@@ -11,8 +11,12 @@ engine1 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_P
 engine2 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}"
 engine3 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}"
 
+bu = "chg"
 
 date = (datetime.now() - timedelta(days=7)).strftime("%Y%m%d")
+
+sdate = '20260401'
+edate = '20260431'
 print(f"Processing data for date: {date}")
 
 
@@ -24,13 +28,13 @@ print(f"Start Process: {datetime.now()}")
 var_query = f"""
     SELECT *
     FROM chg_var_this_year
-    WHERE cntdate BETWEEN '{date}'
+    WHERE cntdate BETWEEN '{sdate}' AND '{edate}'
 """
 
 stk_query = f"""
     SELECT *
     FROM chg_stk_this_year
-    WHERE cntdate BETWEEN '{date}'
+    WHERE cntdate BETWEEN '{sdate}' AND '{edate}'
 """
 
 df_var = pl.read_database_uri(var_query, uri=engine3)
@@ -59,11 +63,11 @@ try:
         # ---------------------------------------------------------------------
         with adbc_psycopg.connect(engine3) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"DELETE FROM chg_var_this_year WHERE cntdate = '{date}'")
+                cursor.execute(f"DELETE FROM chg_var_this_year WHERE cntdate BETWEEN '{sdate}' AND '{edate}'")
                 conn.commit()
-                conn.autocommit = True
-                cursor.execute("vacuum analyze chg_var_this_year")
-                conn.autocommit = False
+                #conn.autocommit = True
+                #cursor.execute("vacuum analyze chg_var_this_year")
+                #conn.autocommit = False
         print(f"Deleted records from DB3 (chg_var_this_year) for cntdate = '{date}'")
     else:
         print(f"No records found in DB3 (chg_var_this_year) for cntdate = '{date}'")
@@ -92,11 +96,11 @@ try:
         # ---------------------------------------------------------------------
         with adbc_psycopg.connect(engine3) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"DELETE FROM chg_stk_this_year WHERE cntdate = '{date}'")
+                cursor.execute(f"DELETE FROM chg_stk_this_year WHERE cntdate BETWEEN '{sdate}' AND '{edate}'")
                 conn.commit()
-                conn.autocommit = True
-                cursor.execute("vacuum analyze chg_stk_this_year")
-                conn.autocommit = False
+                #conn.autocommit = True
+                #cursor.execute("vacuum analyze chg_stk_this_year")
+                #conn.autocommit = False
         print(f"Deleted records from DB3 (chg_stk_this_year) for cntdate = '{date}'")
     else:
         print(f"No records found in DB3 (chg_stk_this_year) for cntdate = '{date}'")

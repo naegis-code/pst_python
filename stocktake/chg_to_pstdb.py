@@ -63,9 +63,12 @@ try:
             with conn.cursor() as cursor:
                 cursor.execute(f"DELETE FROM chg_var_this_year WHERE cntdate = '{date}'")
                 conn.commit()
+        with adbc_psycopg.connect(engine3) as conn:
+            with conn.cursor() as cursor:
                 conn.autocommit = True
                 cursor.execute("vacuum full chg_var_this_year")
-                conn.autocommit = False
+                conn._autocommit = False
+
         print(f"Deleted records from DB3 (chg_var_this_year) for cntdate = '{date}'")
     else:
         print(f"No records found in DB3 (chg_var_this_year) for cntdate = '{date}'")
@@ -96,9 +99,11 @@ try:
             with conn.cursor() as cursor:
                 cursor.execute(f"DELETE FROM chg_stk_this_year WHERE cntdate = '{date}'")
                 conn.commit()
+        with adbc_psycopg.connect(engine3) as conn:
+            with conn.cursor() as cursor:
                 conn.autocommit = True
                 cursor.execute("vacuum full chg_stk_this_year")
-                conn.autocommit = False
+                conn._autocommit = False
         print(f"Deleted records from DB3 (chg_stk_this_year) for cntdate = '{date}'")
     else:
         print(f"No records found in DB3 (chg_stk_this_year) for cntdate = '{date}'")

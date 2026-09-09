@@ -24,14 +24,14 @@ print(f"Start Process: {datetime.now()}")
 var_query = f"""
     SELECT *
     FROM chg_var_this_year
-    WHERE cntdate BETWEEN '{date}'
+    WHERE cntdate = '{date}'
         and bu = 'CHG'
 """
 
 stk_query = f"""
     SELECT *
     FROM chg_stk_this_year
-    WHERE cntdate BETWEEN '{date}'
+    WHERE cntdate = '{date}'
         and bu = 'CHG'
 """
 

@@ -13,9 +13,6 @@ engine3 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_P
 
 date = (datetime.now() - timedelta(days=7)).strftime("%Y%m%d")
 
-sdate = '20260601'
-edate = '20260631'
-
 def to_database(sdate, edate):
     print(f"Processing data for date: {sdate} to {edate}")
 
@@ -111,7 +108,5 @@ def to_database(sdate, edate):
     print(f"End Process Stk: {datetime.now()}")
 
 
-to_database('20260601','20260630')
-to_database('20260701','20260731')
-to_database('20260801','20260831')
+to_database('20260401','20260430')
 

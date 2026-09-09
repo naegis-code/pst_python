@@ -64,7 +64,7 @@ try:
                 cursor.execute(f"DELETE FROM chg_var_this_year WHERE cntdate = '{date}'")
                 conn.commit()
                 conn.autocommit = True
-                cursor.execute("vacuum analyze chg_var_this_year")
+                cursor.execute("vacuum full chg_var_this_year")
                 conn.autocommit = False
         print(f"Deleted records from DB3 (chg_var_this_year) for cntdate = '{date}'")
     else:
@@ -97,7 +97,7 @@ try:
                 cursor.execute(f"DELETE FROM chg_stk_this_year WHERE cntdate = '{date}'")
                 conn.commit()
                 conn.autocommit = True
-                cursor.execute("vacuum analyze chg_stk_this_year")
+                cursor.execute("vacuum full chg_stk_this_year")
                 conn.autocommit = False
         print(f"Deleted records from DB3 (chg_stk_this_year) for cntdate = '{date}'")
     else:

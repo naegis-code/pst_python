@@ -29,12 +29,14 @@ def to_database(sdate, edate):
         SELECT *
         FROM chg_var_this_year
         WHERE cntdate BETWEEN '{sdate}' AND '{edate}'
+            and bu = 'CHG'
     """
 
     stk_query = f"""
         SELECT *
         FROM chg_stk_this_year
         WHERE cntdate BETWEEN '{sdate}' AND '{edate}'
+            and bu = 'CHG'
     """
 
     df_var = pl.read_database_uri(var_query, uri=engine3)

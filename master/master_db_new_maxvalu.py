@@ -7,8 +7,8 @@ from dotenv import load_dotenv,find_dotenv
 
 
 bu = "NEW"
-stcode = "0021"
-cntdate = "20260912"
+stcode = "000"
+cntdate = "20260910"
 
 load_dotenv(find_dotenv())
 
@@ -43,6 +43,7 @@ df_master = (pl.read_database(query=masterbarcode,connection=engine3)
             pl.lit(row["storecode"]).alias("storecode"),
             pl.lit(row["storename"]).alias("storename"),
             pl.lit(stock).alias("stock"),
+            pl.col("retailprice").cast(pl.Float64),
         )
 )
 print(df_master)

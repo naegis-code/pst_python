@@ -1,18 +1,19 @@
 import pandas as pd
 from sqlalchemy import create_engine,text
-import db_connect
 import datetime
+
+user = 'prthanapat'
+password = '20020015'
+date_start_manual = '20260101'
+date_end_manual = '20261231'
 
 print("Start : ",datetime.datetime.now())
 
-
-date_start_manual = '20260101'
-date_end_manual = '20261231'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
-db = create_engine(db_connect.db_url_pstdb)
-db3 = create_engine(db_connect.db_url_pstdb3)
+db = create_engine(f'postgresql+psycopg2://{user}:{password}@localhost:5432/pstdb')
+db3 = create_engine(f'postgresql+psycopg2://{user}:{password}@localhost:5432/pstdb3')
 
 date_start = date_start_manual
 date_end = date_end_manual
@@ -24,6 +25,13 @@ table_type = 'var'
 table_bu = f'{bu.lower()}_{table_type.lower()}_this_year'
 table_missrate = 'missrate_store'
 
+update_query = text(f"""
+    update {table_bu} set bu = 'PWB', skutype = prtype, stcode = substring(cntnum,0,6), cntdate = '20'||substring(cntnum,11,2) ||substring(cntnum,9,2) ||substring(cntnum, 7,2)
+    where bu is null;
+""")
+with db3.begin() as conn:
+    conn.execute(update_query)
+    print("Data preparation completed successfully.")
 
 query = text(f"""
             select stcode ,

@@ -1,18 +1,19 @@
 import pandas as pd
 from sqlalchemy import create_engine,text
-import db_connect
 import datetime
+
+user = ''
+password = ''
+date_start_manual = '20260101'
+date_end_manual = '20261231'
 
 print("Start : ",datetime.datetime.now())
 
-
-date_start_manual = '20260101'
-date_end_manual = '20261231'
 date_start_auto = (datetime.datetime.now() - datetime.timedelta(days=90)).strftime('%Y%m%d')
 date_end_auto = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y%m%d')
 
-db = create_engine(db_connect.db_url_pstdb)
-db3 = create_engine(db_connect.db_url_pstdb3)
+db = create_engine(f'postgresql+psycopg2://{user}:{password}@localhost:5432/pstdb')
+db3 = create_engine(f'postgresql+psycopg2://{user}:{password}@localhost:5432/pstdb3')
 
 date_start = date_start_manual
 date_end = date_end_manual
@@ -41,8 +42,6 @@ query = text(f"""
              group by store,cntdate ,batch ,sku
 
     """)
-
-
 
 # Read data from database
 df = pd.read_sql(query, db3)

@@ -1,10 +1,50 @@
 import os
 import pandas as pd
 from sqlalchemy import create_engine, text
-import db_connect
 import pathlib
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
+from dotenv import load_dotenv, find_dotenv
+import socket
+import subprocess
+import time
+from datetime import datetime
+
+# ==================== โหลดค่าจาก .env ====================
+load_dotenv(find_dotenv())
+
+def is_port_open(host, port, timeout=2):
+    """เช็คว่าพอร์ต local เปิด (มีอะไร listening อยู่) หรือไม่"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        result = s.connect_ex((host, port))
+        return result == 0
+
+DB_HOST = "localhost"
+DB_PORT = 5432
+
+if is_port_open(DB_HOST, DB_PORT):
+    print(f"✅ พอร์ต {DB_PORT} ที่ {DB_HOST} เปิดอยู่ — tunnel ทำงานอยู่")
+else:
+    print(f"❌ พอร์ต {DB_PORT} ที่ {DB_HOST} ปิดอยู่ — tunnel ยังไม่เปิด")
+    subprocess.Popen(
+        "start /b ssh -f -N pst-db",
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+    print("🔑 กำลังเปิด SSH tunnel... (รอ 5 วินาที)")
+    time.sleep(5)
+    print("✅ SSH tunnel เปิดแล้ว") if is_port_open(DB_HOST, DB_PORT) else print("❌ SSH tunnel ยังไม่เปิด — ตรวจสอบการเชื่อมต่อ SSH")
+
+engine1 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}"
+engine2 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}"
+engine3 = f"{os.getenv('DB_CONN_NATIVE')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}"
+
+start_time = datetime.now()
+print(f"starttime: {start_time}")
+
 
 # Set file path
 user_path = pathlib.Path.home()
@@ -25,9 +65,8 @@ scriptsname = 'cnext.py'
 excel_files = [f for f in os.listdir(f_path) if f.endswith(('.xlsx', '.xls')) and os.path.getsize(os.path.join(f_path, f)) > 0]
 
 # PostgreSQL connection details
-engine_plan = create_engine(db_connect.db_url_pstdb)
 plan_query = f"select employee_id ,time_off_date , id from cnext"
-df_plan = pd.read_sql(plan_query, con=engine_plan)
+df_plan = pd.read_sql(plan_query, con=engine1)
 df_plan['time_off_date'] = pd.to_datetime(df_plan['time_off_date']).dt.strftime('%Y-%m-%d')
 
 for file in excel_files:
@@ -81,7 +120,7 @@ for file in excel_files:
         log_entry = [scriptsname, file, 'Data inserted' if record_count > 0 else 'No valid data after filtering', record_count, timestamp]
         
         if record_count > 0:
-            df.to_sql(table, engine_plan, if_exists='append', index=False)
+            df.to_sql(table, engine1, if_exists='append', index=False)
             print(f"✅ Data inserted into '{table}' from {file} at {timestamp} with {record_count} records")
         else:
             print(f"No valid data in {file}")

@@ -7,8 +7,8 @@ from dotenv import load_dotenv,find_dotenv
 
 
 bu = "NEW"
-stcode = "000"
-cntdate = "20260910"
+stcode = "0006"
+cntdate = "20260916"
 
 load_dotenv(find_dotenv())
 

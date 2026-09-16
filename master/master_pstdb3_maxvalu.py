@@ -9,14 +9,15 @@ load_dotenv(find_dotenv())
 
 #path = "D:/Users/prthanap/Downloads"
 path = "C:/Users/shthanapat/Downloads"
-filename = "Item master AX 11.09.2026 Central.xlsx"
+filename = "Item Master 26-09-15.xlsx"
 sheet = 'ItemMaster+Cat'
 pathfile = f"{path}/{filename}"
 tablename = "new_maxvalu_master"
+as_date = '20260915'
 
 #engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
 engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
-as_date = datetime.now().strftime("%Y%m%d")
+
 print(as_date)
 
 

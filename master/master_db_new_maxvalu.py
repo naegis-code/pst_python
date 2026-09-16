@@ -7,13 +7,13 @@ from dotenv import load_dotenv,find_dotenv
 
 
 bu = "NEW"
-stcode = "000"
-cntdate = "20260910"
+stcode = "0006"
+cntdate = "20260916"
 
 load_dotenv(find_dotenv())
 
-engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
-
+#engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
 # 1. กำหนด Path และสร้าง SQLAlchemy Engine
 master = "D:/Master.db"
 engine = create_engine(f"sqlite:///{master}")

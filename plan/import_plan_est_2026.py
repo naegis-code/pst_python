@@ -25,9 +25,11 @@ else:
 
 #"C:\Users\shthanapat\Downloads\Annual Plan 2026 All Update (By Div).xlsx"
 
-user_path = pathlib.Path("C:/Users/shthanapat/Downloads")
+#user_path = pathlib.Path("C:/Users/shthanapat/Downloads")
 
 filename = 'Annual Plan 2026 All Update (By Div).xlsx'
+
+path = filepath / 'Report/2026/99 Plan' / filename
 
 table_plan = 'AnnualPlan'
 table_est = 'estman'
@@ -35,9 +37,7 @@ table_est = 'estman'
 db_plan = 'plan2026'
 db_est = 'est2026'
 
-print(user_path / filename)
-
-df_plan = (pl.read_excel(user_path / filename,table_name=table_plan,infer_schema_length=0)
+df_plan = (pl.read_excel(path,table_name=table_plan,infer_schema_length=0)
             .select(
                 pl.all().name.to_lowercase())
             .with_columns(
@@ -79,7 +79,7 @@ df_plan = (pl.read_excel(user_path / filename,table_name=table_plan,infer_schema
                 'round', 'job_status', 'post_date', 'case_lp_no', 'case_lp_date', 'code_for_copy'])
 )
 
-df_est = (pl.read_excel(user_path / filename,table_name=table_est,infer_schema_length=0)
+df_est = (pl.read_excel(path,table_name=table_est,infer_schema_length=0)
             .select(pl.all().name.to_lowercase())
             .select('empcode','date','activities','shub','position')
             .with_columns(pl.col('date').str.to_date("%Y-%m-%d %H:%M:%S", strict=False))

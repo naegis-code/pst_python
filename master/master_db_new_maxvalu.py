@@ -4,16 +4,60 @@ import shutil
 import polars as pl
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv,find_dotenv
-
+import sys
+from pathlib import Path
 
 bu = "NEW"
-stcode = "0006"
-cntdate = "20260916"
+stcode = "0031"
+cntdate = "20260918"
+
 
 load_dotenv(find_dotenv())
 
-#engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
-engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+user_path = Path.home()
+downloads_path = user_path / "Downloads"
+
+# Determine host based on user profile
+if user_path.name == "prthanap":
+    db_host = os.getenv("DB_HOST")
+elif user_path.name == "shthanapat":
+    db_host = "103.22.182.82"
+else:
+    raise ValueError(f"Unsupported user environment: {user_path.name}")
+
+# Build connection strings safely
+db_base = f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{db_host}:{os.getenv('DB_PORT')}"
+engine0 = create_engine(f"{db_base}/{os.getenv('DB_pstdb')}")
+engine3 = create_engine(f"{db_base}/{os.getenv('DB_pstdb3')}")
+
+# Execute query using a standard SQL string
+query_plan = f"""
+    SELECT branch 
+    FROM planall2 
+    WHERE bu = '{bu}' AND stcode = '{stcode}' AND cntdate = '{cntdate}' AND atype = '3F'
+"""
+
+df_plan = pl.read_database(query=query_plan, connection=engine0)
+
+if df_plan.is_empty():
+    print("No matching plan found.")
+    sys.exit()
+
+# Extract value safely (Polars series indexing)
+branch = df_plan["branch"][0]
+print(f"Branch: {branch}")
+
+query_create_stocktakeid = text(f"select 1 from stocktakeid where stocktakeid = '{bu}{stcode}F{cntdate}'")
+df_qcs = pl.read_database(query_create_stocktakeid, engine3)
+print(df_qcs)
+
+if df_qcs.is_empty():
+    with engine3.begin() as conn:
+        conn.execute(text((f"insert into stocktakeid (cntnum,bu,stcode,cntdate,atype,count_step,status,branch,stocktakeid) values ('{bu}{stcode}F{cntdate}','{bu}','{stcode}','{cntdate}','F','1','อยู่ระหว่างการนับ','{branch}  ','{bu}{stcode}F{cntdate}')")))
+        print(f"Stocktake ID '{bu}{stcode}F{cntdate}' has been inserted into the database.")
+else:
+    print(f"Stocktake ID '{bu}{stcode}F{cntdate}' exists in the database.")
+
 # 1. กำหนด Path และสร้าง SQLAlchemy Engine
 master = "D:/Master.db"
 engine = create_engine(f"sqlite:///{master}")
@@ -22,10 +66,6 @@ stocktakeid = f"{bu}{stcode}F{cntdate}"
 print(stocktakeid)
 storecode = stcode
 stock = 0
-
-path = "D:/Users/prthanap/Documents"
-filename = "Item Master 26-09-03.xlsx"
-pathfile = f"{path}/{filename}"
 
 stocktake = text(f"select cntnum,stcode as storecode,branch as storename,bu,branch,stocktakeid from stocktakeid where stocktakeid = '{stocktakeid}'")
 df_stocktakes = (pl.read_database(query=stocktake,connection=engine3)).unique()
@@ -110,7 +150,6 @@ folder_path = os.path.dirname(master)
 new_master_path = os.path.join(
     folder_path, f"Master_{stocktakeid}_{current_time}.db"
 )
-df_master.write_excel(f"{path}/df_master_{current_time}.xlsx")
 
 shutil.copy2(master, new_master_path)
 

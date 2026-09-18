@@ -4,19 +4,27 @@ import shutil
 import polars as pl
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv,find_dotenv
+from pathlib import Path
 
 load_dotenv(find_dotenv())
 
-#path = "D:/Users/prthanap/Downloads"
-path = "C:/Users/shthanapat/Downloads"
-filename = "Item Master 26-09-15.xlsx"
+user_path = Path.home()
+if user_path.name == "prthanap":
+    path = f"{user_path}/Downloads"
+    engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+elif user_path.name == "shthanapat":
+    path = f"{user_path}/Downloads"
+    engine3 = engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+
+
+filename = "Item master AX 18.09.2026 Central.xlsx"
 sheet = 'ItemMaster+Cat'
 pathfile = f"{path}/{filename}"
 tablename = "new_maxvalu_master"
-as_date = '20260915'
+as_date = '20260918'
 
-#engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
-engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+#engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
 
 print(as_date)
 

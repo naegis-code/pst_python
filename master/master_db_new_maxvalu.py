@@ -7,151 +7,155 @@ from dotenv import load_dotenv,find_dotenv
 import sys
 from pathlib import Path
 
-bu = "NEW"
-stcode = "0031"
-cntdate = "20260918"
+#bu = "NEW"
+#stcode = "0033"
+#cntdate = "20260923"
+
+def create_master_db(bu: str, stcode: str, cntdate: str):
+    load_dotenv(find_dotenv())
+
+    user_path = Path.home()
+    downloads_path = user_path / "Downloads"
+
+    # Determine host based on user profile
+    if user_path.name == "prthanap":
+        db_host = os.getenv("DB_HOST")
+    elif user_path.name == "shthanapat":
+        db_host = "103.22.182.82"
+    else:
+        raise ValueError(f"Unsupported user environment: {user_path.name}")
+
+    # Build connection strings safely
+    db_base = f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{db_host}:{os.getenv('DB_PORT')}"
+    engine0 = create_engine(f"{db_base}/{os.getenv('DB_pstdb')}")
+    engine3 = create_engine(f"{db_base}/{os.getenv('DB_pstdb3')}")
+
+    # Execute query using a standard SQL string
+    query_plan = f"""
+        SELECT branch 
+        FROM planall2 
+        WHERE bu = '{bu}' AND stcode = '{stcode}' AND cntdate = '{cntdate}' AND atype = '3F'
+    """
+
+    df_plan = pl.read_database(query=query_plan, connection=engine0)
+
+    if df_plan.is_empty():
+        print("No matching plan found.")
+        sys.exit()
+
+    # Extract value safely (Polars series indexing)
+    branch = df_plan["branch"][0]
+    print(f"Branch: {branch}")
+
+    query_create_stocktakeid = text(f"select 1 from stocktakeid where stocktakeid = '{bu}{stcode}F{cntdate}'")
+    df_qcs = pl.read_database(query_create_stocktakeid, engine3)
+    print(df_qcs)
+
+    if df_qcs.is_empty():
+        with engine3.begin() as conn:
+            conn.execute(text((f"insert into stocktakeid (cntnum,bu,stcode,cntdate,atype,count_step,status,branch,stocktakeid) values ('{bu}{stcode}F{cntdate}','{bu}','{stcode}','{cntdate}','F','1','อยู่ระหว่างการนับ','{branch}  ','{bu}{stcode}F{cntdate}')")))
+            print(f"Stocktake ID '{bu}{stcode}F{cntdate}' has been inserted into the database.")
+    else:
+        print(f"Stocktake ID '{bu}{stcode}F{cntdate}' exists in the database.")
+
+    # 1. กำหนด Path และสร้าง SQLAlchemy Engine
+    master = "D:/Master.db"
+    engine = create_engine(f"sqlite:///{master}")
+
+    stocktakeid = f"{bu}{stcode}F{cntdate}"
+    print(stocktakeid)
+    storecode = stcode
+    stock = 0
+
+    stocktake = text(f"select cntnum,stcode as storecode,branch as storename,bu,branch,stocktakeid from stocktakeid where stocktakeid = '{stocktakeid}'")
+    df_stocktakes = (pl.read_database(query=stocktake,connection=engine3)).unique()
+    row = df_stocktakes.row(0, named=True)
+    print(df_stocktakes)
+
+    location = text(f"select location_no as location,stocktakeid from location_master where stocktakeid = '{stocktakeid}'")
+    df_location = (pl.read_database(query=location,connection=engine3))
+    print(df_location)
+
+    masterbarcode = text(f"select barcodeibc,barcodeibc as sku,productname,packsize,retailprice,'A' as status from new_maxvalu_master where directconsign = 'Direct'")
+    df_master = (pl.read_database(query=masterbarcode,connection=engine3)
+            .with_columns(
+                pl.lit(row["stocktakeid"]).alias("stocktakeid"),
+                pl.lit(row["storecode"]).alias("storecode"),
+                pl.lit(row["storename"]).alias("storename"),
+                pl.lit(stock).alias("stock"),
+                pl.col("retailprice").cast(pl.Float64),
+            )
+    )
+    print(df_master)
 
 
-load_dotenv(find_dotenv())
+    # 3. จัดการ Database
+    try:
+        # 3.1 สั่ง Delete และ Update ข้อมูลผ่าน engine.begin() เพื่อจัดการ Transaction
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM pda_masters;"))
+            conn.execute(text("DELETE FROM sqlite_sequence WHERE name='pda_masters';"))
+            conn.execute(text("DELETE FROM location_masters;"))
+            conn.execute(text("DELETE FROM sqlite_sequence WHERE name='location_masters';"))
 
-user_path = Path.home()
-downloads_path = user_path / "Downloads"
+            query_update = text("""
+                UPDATE stocktakes 
+                SET countname = :stocktakeid, 
+                    storecode = :storecode, 
+                    storename = :storename, 
+                    bu = :bu, 
+                    branch = :branch
+                WHERE id = 1
+            """)
+            conn.execute(
+                query_update,
+                {
+                    "stocktakeid": row["stocktakeid"],
+                    "storecode": row["storecode"],
+                    "storename": row["storename"],
+                    "bu": row["bu"],
+                    "branch": row["branch"]
+                },
+            )
 
-# Determine host based on user profile
-if user_path.name == "prthanap":
-    db_host = os.getenv("DB_HOST")
-elif user_path.name == "shthanapat":
-    db_host = "103.22.182.82"
-else:
-    raise ValueError(f"Unsupported user environment: {user_path.name}")
-
-# Build connection strings safely
-db_base = f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{db_host}:{os.getenv('DB_PORT')}"
-engine0 = create_engine(f"{db_base}/{os.getenv('DB_pstdb')}")
-engine3 = create_engine(f"{db_base}/{os.getenv('DB_pstdb3')}")
-
-# Execute query using a standard SQL string
-query_plan = f"""
-    SELECT branch 
-    FROM planall2 
-    WHERE bu = '{bu}' AND stcode = '{stcode}' AND cntdate = '{cntdate}' AND atype = '3F'
-"""
-
-df_plan = pl.read_database(query=query_plan, connection=engine0)
-
-if df_plan.is_empty():
-    print("No matching plan found.")
-    sys.exit()
-
-# Extract value safely (Polars series indexing)
-branch = df_plan["branch"][0]
-print(f"Branch: {branch}")
-
-query_create_stocktakeid = text(f"select 1 from stocktakeid where stocktakeid = '{bu}{stcode}F{cntdate}'")
-df_qcs = pl.read_database(query_create_stocktakeid, engine3)
-print(df_qcs)
-
-if df_qcs.is_empty():
-    with engine3.begin() as conn:
-        conn.execute(text((f"insert into stocktakeid (cntnum,bu,stcode,cntdate,atype,count_step,status,branch,stocktakeid) values ('{bu}{stcode}F{cntdate}','{bu}','{stcode}','{cntdate}','F','1','อยู่ระหว่างการนับ','{branch}  ','{bu}{stcode}F{cntdate}')")))
-        print(f"Stocktake ID '{bu}{stcode}F{cntdate}' has been inserted into the database.")
-else:
-    print(f"Stocktake ID '{bu}{stcode}F{cntdate}' exists in the database.")
-
-# 1. กำหนด Path และสร้าง SQLAlchemy Engine
-master = "D:/Master.db"
-engine = create_engine(f"sqlite:///{master}")
-
-stocktakeid = f"{bu}{stcode}F{cntdate}"
-print(stocktakeid)
-storecode = stcode
-stock = 0
-
-stocktake = text(f"select cntnum,stcode as storecode,branch as storename,bu,branch,stocktakeid from stocktakeid where stocktakeid = '{stocktakeid}'")
-df_stocktakes = (pl.read_database(query=stocktake,connection=engine3)).unique()
-row = df_stocktakes.row(0, named=True)
-print(df_stocktakes)
-
-location = text(f"select location_no as location,stocktakeid from location_master where stocktakeid = '{stocktakeid}'")
-df_location = (pl.read_database(query=location,connection=engine3))
-print(df_location)
-
-masterbarcode = text(f"select barcodeibc,barcodeibc as sku,productname,packsize,retailprice,'A' as status from new_maxvalu_master where directconsign = 'Direct'")
-df_master = (pl.read_database(query=masterbarcode,connection=engine3)
-        .with_columns(
-            pl.lit(row["stocktakeid"]).alias("stocktakeid"),
-            pl.lit(row["storecode"]).alias("storecode"),
-            pl.lit(row["storename"]).alias("storename"),
-            pl.lit(stock).alias("stock"),
-            pl.col("retailprice").cast(pl.Float64),
+        # 3.2 เขียน Polars DataFrame ลง SQLite ด้วย SQLAlchemy Engine
+        df_master.write_database(
+            table_name="pda_masters",
+            connection=engine,             # ส่งตัวแปร engine เข้าไปโดยตรง
+            if_table_exists="append",
+            engine="sqlalchemy"            # ระบุ engine="sqlalchemy" ชัดเจน
         )
-)
-print(df_master)
 
-
-# 3. จัดการ Database
-try:
-    # 3.1 สั่ง Delete และ Update ข้อมูลผ่าน engine.begin() เพื่อจัดการ Transaction
-    with engine.begin() as conn:
-        conn.execute(text("DELETE FROM pda_masters;"))
-        conn.execute(text("DELETE FROM sqlite_sequence WHERE name='pda_masters';"))
-        conn.execute(text("DELETE FROM location_masters;"))
-        conn.execute(text("DELETE FROM sqlite_sequence WHERE name='location_masters';"))
-
-        query_update = text("""
-            UPDATE stocktakes 
-            SET countname = :stocktakeid, 
-                storecode = :storecode, 
-                storename = :storename, 
-                bu = :bu, 
-                branch = :branch
-            WHERE id = 1
-        """)
-        conn.execute(
-            query_update,
-            {
-                "stocktakeid": row["stocktakeid"],
-                "storecode": row["storecode"],
-                "storename": row["storename"],
-                "bu": row["bu"],
-                "branch": row["branch"]
-            },
+        df_location.write_database(
+            table_name="location_masters",
+            connection=engine,
+            if_table_exists="append",
+            engine="sqlalchemy"
         )
 
-    # 3.2 เขียน Polars DataFrame ลง SQLite ด้วย SQLAlchemy Engine
-    df_master.write_database(
-        table_name="pda_masters",
-        connection=engine,             # ส่งตัวแปร engine เข้าไปโดยตรง
-        if_table_exists="append",
-        engine="sqlalchemy"            # ระบุ engine="sqlalchemy" ชัดเจน
+        print(f"Delete and Reset ID completed and data inserted into pda_masters: {len(df_master)}")
+        print(f"Delete and Reset ID completed and data inserted into location_masters: {len(df_location)}")
+
+    except Exception as e:
+        print(f"Error during database operations: {e}")
+
+    # 4. บีบไฟล์ DB ด้วย VACUUM
+    with engine.connect() as conn:
+        conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("VACUUM;"))
+
+    # 5. Backup ไฟล์ DB และ Export Excel
+    current_time = datetime.now().strftime("%Y%m%d%H%M")
+    folder_path = os.path.dirname(master)
+
+    new_master_path = os.path.join(
+        folder_path, f"Master_{stocktakeid}_{current_time}.db"
     )
 
-    df_location.write_database(
-        table_name="location_masters",
-        connection=engine,
-        if_table_exists="append",
-        engine="sqlalchemy"
-    )
+    shutil.copy2(master, new_master_path)
 
-    print(f"Delete and Reset ID completed and data inserted into pda_masters: {len(df_master)}")
-    print(f"Delete and Reset ID completed and data inserted into location_masters: {len(df_location)}")
+    print(f"Backup file created successfully at: {new_master_path}")
+    print("export completed")
 
-except Exception as e:
-    print(f"Error during database operations: {e}")
-
-# 4. บีบไฟล์ DB ด้วย VACUUM
-with engine.connect() as conn:
-    conn.execution_options(isolation_level="AUTOCOMMIT").execute(text("VACUUM;"))
-
-# 5. Backup ไฟล์ DB และ Export Excel
-current_time = datetime.now().strftime("%Y%m%d%H%M")
-folder_path = os.path.dirname(master)
-
-new_master_path = os.path.join(
-    folder_path, f"Master_{stocktakeid}_{current_time}.db"
-)
-
-shutil.copy2(master, new_master_path)
-
-print(f"Backup file created successfully at: {new_master_path}")
-print("export completed")
+create_master_db(bu="NEW", stcode="0033", cntdate="20260924")
+create_master_db(bu="NEW", stcode="0042", cntdate="20260924")
+create_master_db(bu="NEW", stcode="0048", cntdate="20260924")

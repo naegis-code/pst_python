@@ -4,15 +4,16 @@ import shutil
 from datetime import datetime, timedelta
 
 # Set the time threshold in hours
-stcode = '110'
-cntdate = '20260514'
-cntdate_threshold = pd.to_datetime(cntdate, errors='coerce')
+#stcode = '110'
+#cntdate = '20260514'
+#cntdate_threshold = pd.to_datetime(cntdate, errors='coerce')
 
 
 stcode_cntdate = [
-    ('232','20260811'),
-    ('520','20260815'),
-    ('054','20260820'),
+    ('163','20260909'),
+    ('254','20260910'),
+    ('516','20260911'),
+    ('256','20260917'),
 ]
 
 cond_df = pd.DataFrame(stcode_cntdate, columns=['stcode', 'cntdate'])

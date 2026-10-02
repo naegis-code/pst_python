@@ -2,6 +2,13 @@ import pandas as pd
 from sqlalchemy import create_engine,text
 import db_connect
 import pathlib
+from dotenv import load_dotenv, find_dotenv
+import os
+
+load_dotenv(find_dotenv())
+
+engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
 
 # ========== PATH SETUP ==========
 userpath = pathlib.Path.home()
@@ -20,7 +27,7 @@ print(f"Start time for filtering data: {filter_count_date}")
 
 src_path = filepath / 'Shared' / 'Checklists_Online' / 'checklist_raw.xlsx'
 
-connect_db = create_engine(db_connect.db_url_pstdb)
+connect_db = engine1
 
 # =================================
 df = pd.read_excel(src_path, sheet_name=sheet,dtype=str)

@@ -153,6 +153,62 @@ df_report.write_csv(path_report)
 
 print(f"✅ Report data saved to {path_report} successfully. Total rows: {len(df_report)}")
 
+q_dept = f"""
+                select 
+                stcode,
+                cntdate,
+                rpname,
+                skutype,
+                dpt,
+                sdpt,
+                count(*) as sku_count,
+                sum(case when qty_var = 0 then 1 else 0 end) as sku_eq,
+                sum(case when qty_var > 0 then 1 else 0 end) as sku_gain,
+                sum(case when qty_var < 0 then 1 else 0 end) as sku_loss,
+                sum(soh) as qnt_soh,
+                sum(qty_count) as qnt_physical,
+                sum(case when qty_var > 0 then qty_var else 0 end) as qnt_gain,
+                sum(case when qty_var < 0 then qty_var else 0 end) as qnt_loss,
+                sum(qty_var) as qnt_variance,
+                sum(soh*retail) as retail_soh,
+                sum(soh*"cost") as cost_soh,
+                sum(phycnt_rtl) as retail_physical,
+                sum(phycnt_cst) as cost_physical,
+                sum(case when extrtl_var  > 0 then extrtl_var  else 0 end) as retail_gain,
+                sum(case when extcst_var  > 0 then extcst_var  else 0 end) as cost_gain,
+                sum(case when extrtl_var < 0 then extrtl_var else 0 end) as retail_loss,
+                sum(case when extcst_var < 0 then extcst_var else 0 end) as cost_loss,
+                sum(extrtl_var) as retail_net,
+                sum(extcst_var) as cost_net
+            from {bu.lower()}_stk_this_year osty 
+            where rpname = 'STK2'
+                and cntdate between '{sdate}' and '{edate}'
+            group by 
+                stcode,
+                cntdate,
+                rpname,
+                skutype,
+                dpt,
+                sdpt
+                """
+df_dept = pl.read_database_uri(q_dept, engine3)
+
+q_master_dept = f"""select dept as dpt,sub_dept as sdpt,concat(dept,' ',dept_name) as dept,concat(sub_dept,' ',sub_dept_name) as sub_dept
+                    from master_dept md 
+                    where bu = '{bu.upper()}'
+                    """
+df_master_dept = pl.read_database_uri(q_master_dept, engine1)
+
+df_dept = df_dept.join(df_master_dept, on=['dpt', 'sdpt'], how='left').drop(['dpt', 'sdpt'])
+
+
+print(f"✅ B2S department report data retrieved successfully. Total rows: {len(df_dept)}")
+
+df_dept = df_dept.join(df_plan, on=['stcode', 'cntdate'], how='left')
+print(f"✅ Department data merged successfully. Total rows after merge: {len(df_dept)}")
+df_dept.write_csv(path_report_dept)
+print(f"✅ Department report data saved to {path_report_dept} successfully. Total rows: {len(df_dept)}")
+
 end_time = datetime.now()
 print(f"endtime: {end_time}")
 print(f"Usetime: {end_time - start_time}")

@@ -13,13 +13,20 @@ script_name = 'import_plan_est_2027.py'
 
 def send_telegram(message):
     token = '8694562639:AAEz3o6d06RhIFwRJBNVUqf_H6MqJMyuZIc0'
-    chat_id = '-1005181414443'
+    # เพิ่ม -100 ข้างหน้า ID กลุ่ม
+    chat_id = '-1005181414443' 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
+    
     try:
-        requests.post(url, json=payload, timeout=10)
+        res = requests.post(url, json=payload, timeout=10)
+        res_json = res.json()
+        if not res_json.get("ok"):
+            print(f"⚠️ Telegram API Error: {res_json}")
+        else:
+            print("📱 Telegram Notification sent successfully!")
     except Exception as e:
-        print(f"Failed to send Telegram notification: {e}")
+        print(f"❌ Failed to send Telegram notification: {e}")
 
 
 # ตั้งค่าให้โชว์คอลัมน์ครบ (ไม่ตัด ...)

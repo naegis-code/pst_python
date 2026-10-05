@@ -12,9 +12,8 @@ load_dotenv(find_dotenv())
 script_name = 'import_plan_est_2027.py'
 
 def send_telegram(message):
-    token = '8694562639:AAEz3o6d06RhIFwRJBNVUqf_H6MqJMyuZIc0'
-    # เพิ่ม -100 ข้างหน้า ID กลุ่ม
-    chat_id = '-1005181414443' 
+    token = "8694562639:AAG8TbsWxIDg9VVoLVn_qdloCgQoDNFwxMw"
+    chat_id = "-5181414443"
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
     

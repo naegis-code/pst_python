@@ -49,12 +49,12 @@ filepath = (
     else userpath / 'Central Group/PST Performance Team - Documents'
 )
 
-bu = 'B2S'
+bu = 'OFM'
 sdate = '20260101'
 edate = '20261231'
 
-path_report = filepath / 'Apps' / 'Stocktake' / 'b2s_stk_report.csv'
-path_report_dept = filepath / 'Apps' / 'Stocktake' / 'b2s_stk_report_dept.csv'
+path_report = filepath / 'Apps' / 'Stocktake' / f'{bu.lower()}_stk_report.csv'
+path_report_dept = filepath / 'Apps' / 'Stocktake' / f'{bu.lower()}_stk_report_dept.csv'
 
 q_plan = f"""SELECT bu,
                     stcode,
@@ -76,19 +76,9 @@ q_plan = f"""SELECT bu,
 df_plan = pl.read_database_uri(q_plan, engine1)
 print(f"✅ Plan data retrieved successfully. Total rows: {len(df_plan)}")
 
-q_report = f"""with bsale as (
-    select mdstor as stcode, cntdate,'Credit' as skutype , sum(credit) as sale
-    from b2s_sale_this_year bssty
-    where cntdate between '{sdate}' and '{edate}'
-    group by mdstor ,cntdate
-    union all 
-    select mdstor as stcode, cntdate,'Consign' as skutype , sum(consignment) as sale
-    from b2s_sale_this_year bssty
-    where cntdate between '{sdate}' and '{edate}'
-    group by mdstor ,cntdate
-    ), bmiss as (
+q_report = f"""with miss as (
     select store,cntdate,new_phycnt_qty ,new_phycnt_amount ,qty_missrate ,amount_missrate ,abs_first_qty ,abs_final_qty ,abs_first_amount ,abs_final_amount 
-    from b2s_calculate_missrate bscm
+    from {bu.lower()}_calculate_missrate bscm
     where cntdate between '{sdate}' and '{edate}'
     )
     select bs.store as stcode ,bs.cntdate ,bs.rpname ,bs.skutype ,
@@ -120,7 +110,7 @@ q_report = f"""with bsale as (
             case when bs.extcst_var < 0 then bs.extcst_var else 0 end) as cost_loss,
         sum(bs.extrtl_var) as retail_net,
         sum(bs.extcst_var) as cost_net,
-        s.sale as cost_sale,
+        0 as cost_sale,
         m.new_phycnt_qty,
         m.new_phycnt_amount,
         m.qty_missrate,
@@ -129,11 +119,10 @@ q_report = f"""with bsale as (
         m.abs_final_qty,
         m.abs_first_amount,
         m.abs_final_amount
-    from b2s_stk_this_year bs
-    left join bsale s on bs.store = s.stcode and bs.cntdate = s.cntdate and bs.skutype = s.skutype
-    left join bmiss m on bs.store = m.store and bs.cntdate = m.cntdate
+    from {bu.lower()}_stk_this_year bs
+    left join miss m on bs.store = m.store and bs.cntdate = to_char(m.cntdate,'yyyymmdd')
     where bs.cntdate between '{sdate}' and '{edate}'
-    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype ,s.sale, m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate, m.abs_first_qty, m.abs_final_qty, m.abs_first_amount, m.abs_final_amount
+    group by bs.store ,bs.cntdate ,bs.rpname ,bs.skutype , m.new_phycnt_qty, m.new_phycnt_amount, m.qty_missrate, m.amount_missrate, m.abs_first_qty, m.abs_final_qty, m.abs_first_amount, m.abs_final_amount
     """
 
 df_report = pl.read_database_uri(q_report, engine3)
@@ -202,7 +191,7 @@ df_master_dept = pl.read_database_uri(q_master_dept, engine1)
 df_dept = df_dept.join(df_master_dept, on=['dpt', 'sdpt'], how='left').drop(['dpt', 'sdpt'])
 
 
-print(f"✅ B2S department report data retrieved successfully. Total rows: {len(df_dept)}")
+print(f"✅ OFM department report data retrieved successfully. Total rows: {len(df_dept)}")
 
 df_dept = df_dept.join(df_plan, on=['stcode', 'cntdate'], how='left')
 print(f"✅ Department data merged successfully. Total rows after merge: {len(df_dept)}")

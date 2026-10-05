@@ -40,7 +40,7 @@ if windows:
     pyautogui.write(password)
     pyautogui.press('enter')
     time.sleep(0.5)
-    pyautogui.press('enter',presses=3)
+    pyautogui.press('enter',presses=4)
     time.sleep(0.5)
     pyautogui.write('04')
     time.sleep(0.5)

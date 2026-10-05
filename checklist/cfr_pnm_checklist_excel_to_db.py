@@ -1,25 +1,34 @@
 import pandas as pd
 from sqlalchemy import create_engine,text
-import db_connect
 import pathlib
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv,find_dotenv
 import os
-
 load_dotenv(find_dotenv())
-
-engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
-engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
 
 # ========== PATH SETUP ==========
 userpath = pathlib.Path.home()
+
+if userpath.name == "prthanap":
+    path = f"{userpath}/Downloads"
+    engine0 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+    engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+elif userpath.name == "shthanapat":
+    path = f"{userpath}/Downloads"
+    engine0 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+    engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+else:
+    path = f"{userpath}/Downloads"
+    engine0 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+    engine3 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb3')}")
+
 filepath = (
     userpath / 'Central Group/PST Performance Team - เอกสาร'
     if (userpath / 'Central Group/PST Performance Team - เอกสาร').exists()
     else userpath / 'Central Group/PST Performance Team - Documents'
 )
 
-bu = 'b2s'
-sheet  = 'b2s_v1'
+bu = 'cfr'
+sheet  = 'pnm_v1'
 
 filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=1)
 filter_count_date = filter_count_date.strftime('%Y%m%d')
@@ -27,41 +36,37 @@ print(f"Start time for filtering data: {filter_count_date}")
 
 src_path = filepath / 'Shared' / 'Checklists_Online' / 'checklist_raw.xlsx'
 
-connect_db = engine1
+connect_db = engine0
 
 # =================================
 df = pd.read_excel(src_path, sheet_name=sheet,dtype=str)
 
 # Select only the necessary columns
 keep_columns = [
-    'ID', 'created','stcode','check_date',
-    'B2SV1F01','B2SV1F02','B2SV1F03','B2SV1F04','B2SV1F05','B2SV1F06','B2SV1F07','B2SV1F08','B2SV1F09','B2SV1F10',
-    'B2SV1F11','B2SV1F12','B2SV1F13','B2SV1F14','B2SV1F15','B2SV1F16','B2SV1F17','B2SV1F18','B2SV1F19','B2SV1F20',
-    'B2SV1F21','B2SV1F22','B2SV1F23','B2SV1F24','B2SV1F25','B2SV1F26','B2SV1F27','B2SV1F28','B2SV1F29','B2SV1F30',
-    'B2SV1F31','B2SV1F32','B2SV1F33','B2SV1F34','B2SV1F35','B2SV1F36','B2SV1F37','B2SV1F38','B2SV1F39','B2SV1F40',
-    'B2SV1F41','B2SV1F42','B2SV1F43',
-
-    'B2SV1B01','B2SV1B02','B2SV1B03','B2SV1B04','B2SV1B05','B2SV1B06','B2SV1B07','B2SV1B08'
+    'Id', 'Start time','รหัสสาขา (Store Code)','วันที่นับ\xa0Full stock count',
+    'PNM01','PNM02','PNM03','PNM04','PNM05','PNM06','PNM07','PNM08','PNM09','PNM10',
+    'PNM11','PNM12','PNM13','PNM14','PNM15','PNM16','PNM17','PNM18','PNM19','PNM20',
+    'PNM21','PNM22','PNM23','PNM24','PNM25','PNM26','PNM27','PNM28','PNM29','PNM30',
+    'PNM31','PNM32','PNM33','PNM34','PNM35','PNM36','PNM37','PNM38','PNM39','PNM40',
+    'PNM41','PNM42','PNM43','PNM44','PNM45','PNM46','PNM47'
 ]
-
 df = df[keep_columns]
 
 # 2️⃣ dtype ของแต่ละ column
 dtype_map = {
-    'ID': 'Int64',
-    'created': 'datetime64[ns]',
-    'stcode': 'string',
-    'check_date': 'datetime64[ns]',
+    'Id': 'Int64',
+    'Start time': 'datetime64[ns]',
+    'รหัสสาขา (Store Code)': 'string',
+    'วันที่นับ\xa0Full stock count': 'datetime64[ns]'
 }
 
-# auto ใส่ int ให้ OFMV1A01–OFMV1F09
-dtype_map.update({f'B2SV1F{i:02d}': 'Int64' for i in range(1, 44)})
-dtype_map.update({f'B2SV1B{i:02d}': 'Int64' for i in range(1, 9)})
+# auto ใส่ int ให้
+dtype_map.update({f'PNM{i:02d}': 'Int64' for i in range(1, 48)})
 
 # select + cast
 df = df.astype(dtype_map)
 
-df.rename(columns={'ID':'id','created':'checkdate','check_date':'cntdate'}, inplace=True)
+df.rename(columns={'Id':'id','Start time':'checkdate','วันที่นับ\xa0Full stock count':'cntdate','รหัสสาขา (Store Code)':'stcode'}, inplace=True)
 
 df = df.sort_values(by='id', ascending=False).drop_duplicates(subset=['stcode', 'cntdate'])
 
@@ -109,16 +114,15 @@ df['zone'] = df['zone'].replace({'B': 'Back', 'F': 'Sale'})
 
 # check branch from planall2
 df_plan = pd.read_sql(
-    text(f"SELECT bu, stcode, cntdate, branch FROM planall2 WHERE bu = '{bu.upper()}'"),
+    text(f"SELECT bu, stcode, cntdate, branch FROM planall2 WHERE bu = '{bu.upper()}' and type1 = 'PNM' and atype = '3F'"),
     connect_db
 )
 df = df.merge(
     df_plan,
     on=['bu', 'stcode', 'cntdate'],
-    how='left'
+    how='inner'
 )
-df = df[df['branch'].notna()].drop(columns=['branch','id'], errors='ignore')
-
+df = df.drop(columns=['branch','id','type1'], errors='ignore')
 
 # check recheck from checklist table
 df_checklist = pd.read_sql(
@@ -133,8 +137,8 @@ df = df.merge(
 df = df[df['recheck'].isna()].drop(columns=['recheck'], errors='ignore')
 
 # Display the first few rows of the DataFrame
-print(df.shape)
+print(df)
 # Insert data into the checklist table
-df.to_sql('checklist', connect_db, if_exists='append', index=False)
+#df.to_sql('checklist', connect_db, if_exists='append', index=False)
 print(f"✅ Data inserted into the checklist table successfully. Total rows inserted: {len(df)}")
 

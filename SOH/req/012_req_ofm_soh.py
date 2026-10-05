@@ -41,7 +41,7 @@ if windows:
     time.sleep(0.5)
     pyautogui.press('enter')
     time.sleep(0.5)
-    pyautogui.press('enter',presses=3)
+    pyautogui.press('enter',presses=4)
     time.sleep(0.5)
     pyautogui.write('27')
     time.sleep(0.5)

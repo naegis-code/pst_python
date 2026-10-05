@@ -4,8 +4,23 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv,find_dotenv
 import pathlib
 import os
+import requests
+import traceback
 
 load_dotenv(find_dotenv())
+
+script_name = 'import_plan_est_2027.py'
+
+def send_telegram(message):
+    token = '8694562639:AAEz3o6d06RhIFwRJBNVUqf_H6MqJMyuZIc0'
+    chat_id = '-5181414443'
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": message}
+    try:
+        requests.post(url, json=payload, timeout=10)
+    except Exception as e:
+        print(f"Failed to send Telegram notification: {e}")
+
 
 # ตั้งค่าให้โชว์คอลัมน์ครบ (ไม่ตัด ...)
 #pl.Config.set_tbl_cols(-1).set_tbl_rows(-1)
@@ -122,5 +137,25 @@ try:
 
     df_plan.write_database(db_plan, engine, if_table_exists='append')
     df_est.write_database(db_est, engine, if_table_exists='append')
+
+    # ข้อความกรณี Success
+    success_msg = (
+        f"✅ [{script_name}] Run Completed Successfully!\n"
+        f"----------------------------------------\n"
+        f"📊 df_plan inserted: {len(df_plan):,} rows\n"
+        f"📊 df_est inserted: {len(df_est):,} rows"
+    )
+    print(success_msg)
+    
+    # ส่งแจ้งเตือนกรณีสำเร็จ
+    send_telegram(success_msg)  # หรือเปลี่ยนเป็น send_discord(success_msg)
 except Exception as e:
     print(e)
+    error_msg = (
+        f"❌ [{script_name}] Run Failed!\n"
+        f"----------------------------------------\n"
+        f"Error: {str(e)}\n"
+        f"Traceback: {traceback.format_exc()}"
+    )
+    print(error_msg)
+    send_telegram(error_msg)  # หรือเปลี่ยนเป็น send_discord(error_msg)

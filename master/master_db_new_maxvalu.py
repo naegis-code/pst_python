@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 
 bu = "NEW"
-stcode = "0031"
-cntdate = "20260918"
+stcode = "0016"
+cntdate = "20260928"
 
 
 load_dotenv(find_dotenv())

@@ -13,3 +13,5 @@ stocktake/__pycache__/db_connect.cpython-312.pyc
 .gitignore
 checklist/__pycache__/db_connect.cpython-312.pyc
 plan/__pycache__/files_path.cpython-312.pyc
+*.pyc
+*.pyc

@@ -31,18 +31,22 @@ try:
     # ตั้งค่าให้โชว์คอลัมน์ครบ (ไม่ตัด ...)
     #pl.Config.set_tbl_cols(-1).set_tbl_rows(-1)
 
-    engine = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
-
-    query = text("""SELECT * FROM date_master;""")
-    df_date_master = pl.read_database(query, engine)
-
     # Set file path
     user_path = pathlib.Path.home()
+    print(user_path.name)
+
+    if user_path.name == 'prthanap':
+        engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+    else:
+        engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
 
     if (user_path / 'Central Group/PST Performance Team - เอกสาร').exists():
         filepath = user_path / 'Central Group/PST Performance Team - เอกสาร'
     else:
         filepath = user_path / 'Central Group/PST Performance Team - Documents'
+
+    query = text("""SELECT * FROM date_master;""")
+    df_date_master = pl.read_database(query, engine1)
 
     #"C:\Users\shthanapat\Downloads\Annual Plan 2026 All Update (By Div).xlsx"
 
@@ -137,12 +141,12 @@ try:
           
 
 
-    with engine.begin() as conn:
+    with engine1.begin() as conn:
         conn.execute(text(f"DELETE FROM {db_plan}"))
         conn.execute(text(f"DELETE FROM {db_est}"))
 
-    df_plan.write_database(db_plan, engine, if_table_exists='append')
-    df_est.write_database(db_est, engine, if_table_exists='append')
+    df_plan.write_database(db_plan, engine1, if_table_exists='append')
+    df_est.write_database(db_est, engine1, if_table_exists='append')
 
     # ข้อความกรณี Success
     success_msg = (

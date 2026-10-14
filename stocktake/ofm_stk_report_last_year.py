@@ -50,7 +50,7 @@ filepath = (
 )
 
 bu = 'OFM'
-sdate = '20250101'
+sdate = '20240101'
 edate = '20251231'
 
 path_report = filepath / 'Apps' / 'Stocktake' / f'{bu.lower()}_stk_report_last_year.csv'

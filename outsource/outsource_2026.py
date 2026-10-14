@@ -23,7 +23,7 @@ sheet = 'Refresh Annual Plan'
 db = create_engine(db_connect.db_url_pstdb)
 
 # Delete old data before inserting new data
-q_del_old = text("delete from outsources where cntdate >= '2026-01-01'")
+q_del_old = text("delete from outsources where cntdate between '2026-01-01' and '2026-12-31'")
 with db.begin() as w:
     w.execute(q_del_old)
     print("✅Old data deleted.")

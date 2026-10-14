@@ -14,7 +14,7 @@ filepath = (
 )
 
 bu = 'CFR'
-sdate = '20250101'
+sdate = '20240101'
 edate = '20251231'
 
 path_report = filepath / 'Apps' / 'Stocktake' / 'cfr_stk_report_last_year.csv'

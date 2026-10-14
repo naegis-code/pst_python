@@ -50,7 +50,7 @@ filepath = (
 )
 
 bu = 'PWB'
-sdate = '20250101'
+sdate = '20240101'
 edate = '20251231'
 
 path_report = filepath / 'Apps' / 'Stocktake' / 'pwb_stk_report_last_year.csv'

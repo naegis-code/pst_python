@@ -50,7 +50,7 @@ filepath = (
 )
 
 bu = 'CHG'
-sdate = '20260101'
+sdate = '20240101'
 edate = '20261231'
 
 path_report = filepath / 'Apps' / 'Stocktake' / 'chg_stk_report.csv'

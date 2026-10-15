@@ -95,14 +95,14 @@ try:
                                     as perishable_soh
                                     ,case 
                                         when outsource_cnt_type = 'All' then total_soh
-                                    when outsource_cnt_type = 'Food' then food_soh
-                                    when outsource_cnt_type like 'Food+%' then food_soh
-                                    when outsource_cnt_type like 'Food & Non-Food%' then food_soh+nonfood_soh 
-                                    when outsource_cnt_type like 'Food & Perishable%' then food_soh+perishable_soh 
-                                    when outsource_cnt_type = 'Non-Food' then nonfood_soh 
-                                    when outsource_cnt_type like 'Non-Food+%' then nonfood_soh 
-                                    when outsource_cnt_type like 'Non-Food & Perishable%' then nonfood_soh+perishable_soh 
-                                    when outsource_cnt_type like 'Perishable%' then perishable_soh
+                                        when outsource_cnt_type = 'Food' then food_soh
+                                        when outsource_cnt_type like 'Food+%' then food_soh
+                                        when outsource_cnt_type like 'Food & Non-Food%' then food_soh+nonfood_soh 
+                                        when outsource_cnt_type like 'Food & Perishable%' then food_soh+perishable_soh 
+                                        when outsource_cnt_type = 'Non-Food' then nonfood_soh 
+                                        when outsource_cnt_type like 'Non-Food+%' then nonfood_soh 
+                                        when outsource_cnt_type like 'Non-Food & Perishable%' then nonfood_soh+perishable_soh 
+                                        when outsource_cnt_type like 'Perishable%' then perishable_soh
                                 else 0 end 
                                 as total_soh
                                 ,case when div_pman_outsource > 0 then div_pman_outsource else div_cman_outsource end as est_man

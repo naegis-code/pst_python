@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import polars as pl
 import psycopg2
 from sqlalchemy import create_engine, text
@@ -33,7 +35,7 @@ try:
 
     # Set file path
     user_path = pathlib.Path.home()
-    print(user_path.name)
+    
 
     if user_path.name == 'prthanap':
         engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
@@ -55,6 +57,8 @@ try:
     filename = 'Annual Plan 2027 All Update (By Div).xlsx'
 
     path = filepath / 'Report/2027/99 Plan' / filename
+
+    update_time = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
 
     table_plan = 'AnnualPlan'
     table_est = 'estman'
@@ -151,6 +155,7 @@ try:
     # ข้อความกรณี Success
     success_msg = (
         f"✅ [{script_name}]\nRun Completed Successfully!\n"
+        f"📅 Read File update: {update_time}\n"
         f"----------------------------------------\n"
         f"📊 df_plan inserted: {len(df_plan):,} rows\n"
         f"📊 df_est inserted: {len(df_est):,} rows"

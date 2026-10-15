@@ -53,8 +53,8 @@ bu = 'CFW'
 sdate = '20260101'
 edate = '20261231'
 
-path_report = f"{filepath / 'Apps' / 'Stocktake' / '{bu.lower()}_stk_report.csv'}"
-path_report_dept = f"{filepath / 'Apps' / 'Stocktake' / '{bu.lower()}_stk_report_dept.csv'}"
+path_report = f"{filepath / 'Apps' / 'Stocktake' / f'{bu.lower()}_stk_report.csv'}"
+path_report_dept = f"{filepath / 'Apps' / 'Stocktake' / f'{bu.lower()}_stk_report_dept.csv'}"
 
 q_plan = f"""SELECT bu,
                     stcode,

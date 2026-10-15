@@ -1,5 +1,6 @@
 import polars as pl
 import psycopg2
+from datetime import datetime
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv,find_dotenv
 import pathlib
@@ -10,7 +11,7 @@ load_dotenv(find_dotenv())
 # ตั้งค่าให้โชว์คอลัมน์ครบ (ไม่ตัด ...)
 #pl.Config.set_tbl_cols(-1).set_tbl_rows(-1)
 
-engine = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+engine = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
 
 query = text("""SELECT * FROM date_master;""")
 df_date_master = pl.read_database(query, engine)
@@ -36,6 +37,11 @@ table_est = 'estman'
 
 db_plan = 'plan2026'
 db_est = 'est2026'
+
+
+update_time = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
+
+print(f"ไฟล์ Excel อัปเดตล่าสุด: {update_time}")
 
 df_plan = (pl.read_excel(path,table_name=table_plan,infer_schema_length=0)
             .select(
@@ -112,8 +118,6 @@ df_est = df_est.sql("""select empcode, date, activities, shub, position,
                     end as activity_type
                 from self
 """)
-              
-          
 
 try:
     with engine.begin() as conn:

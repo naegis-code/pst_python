@@ -3,6 +3,15 @@ import os
 import time
 from datetime import datetime, timedelta
 from user_pass import b2s_user,b2s_pass
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+user = os.getenv('b2s_user')
+password = os.getenv('b2s_pass')
+
+print(f"User: {user}")
+print(f"Password: {password}")
 
 os.system('start "" "D:\\Users\\prthanap\\Desktop\\Program\\OFM.WS"')
 
@@ -15,16 +24,16 @@ windows = pyautogui.getWindowsWithTitle("Session A - [24 x 80]")  # Replace with
 if windows:
     windows[0].activate()
     time.sleep(1)  
-    pyautogui.write(b2s_user)
+    pyautogui.write(user)
     pyautogui.press('tab')
     time.sleep(0.5)
-    pyautogui.write(b2s_pass)
+    pyautogui.write(password)
     pyautogui.press('enter')
     time.sleep(10)
-    pyautogui.write(b2s_user)
+    pyautogui.write(user)
     pyautogui.press('tab')
     time.sleep(0.5)
-    pyautogui.write(b2s_pass)
+    pyautogui.write(password)
     time.sleep(0.5)
     pyautogui.press('enter')
     time.sleep(0.5)

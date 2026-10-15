@@ -63,13 +63,38 @@ try:
     ssl(engine1)
 
     query_outsource = text("""with d as (
-                            select bu,stcode,branch,province ,shub ,type1 as st_type,cntdate ,outsource_cnt_type as cnt_type ,hiring_outsource as hiring_status
-                                ,food_soh
-                                ,nonfood_soh
-                                ,perishable_soh
-                                ,total_soh 
-                                ,case 
-                                    when outsource_cnt_type = 'All' then total_soh
+                                select bu,stcode,branch,province ,shub ,type1 as st_type
+                                    ,cntdate ,outsource_cnt_type as cnt_type 
+                                    ,hiring_outsource as hiring_status
+                                    ,case when outsource_cnt_type like '%Manday%' and div_pman_outsource > 0 then div_pman_outsource
+                                        when outsource_cnt_type like '%Manday%' and div_pman_outsource = 0 then div_cman_outsource
+                                        else 0 end 
+                                        as man_outsource
+                                    ,case 
+                                        when outsource_cnt_type = 'All' then food_soh
+                                        when outsource_cnt_type = 'Food' then food_soh
+                                        when outsource_cnt_type like 'Food+%' then food_soh
+                                        when outsource_cnt_type like 'Food & Non-Food%' then food_soh
+                                        when outsource_cnt_type like 'Food & Perishable%' then food_soh
+                                    else 0 end 
+                                    as food_soh
+                                    ,case 
+                                        when outsource_cnt_type = 'All' then nonfood_soh
+                                        when outsource_cnt_type like 'Food & Non-Food%' then nonfood_soh
+                                        when outsource_cnt_type = 'Non-Food' then nonfood_soh 
+                                        when outsource_cnt_type like 'Non-Food+%' then nonfood_soh
+                                        when outsource_cnt_type like 'Non-Food & Perishable%' then nonfood_soh
+                                    else 0 end 
+                                    as nonfood_soh
+                                    ,case 
+                                        when outsource_cnt_type = 'All' then perishable_soh
+                                        when outsource_cnt_type like 'Food & Perishable%' then perishable_soh
+                                        when outsource_cnt_type like 'Non-Food & Perishable%' then perishable_soh
+                                        when outsource_cnt_type like 'Perishable%' then perishable_soh
+                                    else 0 end 
+                                    as perishable_soh
+                                    ,case 
+                                        when outsource_cnt_type = 'All' then total_soh
                                     when outsource_cnt_type = 'Food' then food_soh
                                     when outsource_cnt_type like 'Food+%' then food_soh
                                     when outsource_cnt_type like 'Food & Non-Food%' then food_soh+nonfood_soh 
@@ -79,13 +104,16 @@ try:
                                     when outsource_cnt_type like 'Non-Food & Perishable%' then nonfood_soh+perishable_soh 
                                     when outsource_cnt_type like 'Perishable%' then perishable_soh
                                 else 0 end 
-                                as soh_outsource
+                                as total_soh
                                 ,case when div_pman_outsource > 0 then div_pman_outsource else div_cman_outsource end as est_man
                             from plan2027 p 
                             where p.hiring_outsource = 'YES'
                             )
-                            select bu,stcode,branch,province ,shub ,st_type,cntdate ,cnt_type,hiring_status,soh_outsource
-                                ,round(soh_outsource/10500)+est_man as est_man_outsource
+                            select bu,stcode,branch,province ,shub ,st_type,cntdate ,cnt_type,hiring_status,total_soh,total_soh as soh_outsource
+                                ,food_soh
+                                ,nonfood_soh
+                                ,perishable_soh
+                                ,round(total_soh/10500)+man_outsource as est_man_total
                             from d""")  
     
     df = pl.read_database(query_outsource,engine1)

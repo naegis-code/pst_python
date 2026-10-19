@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import polars as pl
 import psycopg2
 from sqlalchemy import create_engine, text

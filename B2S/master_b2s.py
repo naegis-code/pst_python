@@ -1,83 +1,149 @@
-import pandas as pd
+import polars as pl
 from sqlalchemy import create_engine, text
-import db_connect as db
 import shutil
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
+from pathlib import Path
+from datetime import datetime
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from tunnel import ensure_tunnel, engine1,engine3
+# ---------- ตั้งค่า ----------
 bu = 'B2S'
-stcode = '50112'
+stcode = '50008'
 atype = '3F'
-cntdate = '20250104'
-
+cntdate = '20261027'
 path_master = 'D:\\Master.db'
+countName = bu + stcode + atype[-1] + cntdate
 
-engine_db = create_engine(db.db_url_pstdb)
-engine_db3 = create_engine(db.db_url_pstdb3)
+timestamp = datetime.now().strftime("%Y%m%d%H%M")   # 12 หลัก: ปีเดือนวันชั่วโมงนาที
+dest = f"D:\\Master_{countName}_{timestamp}.db"
+
+# ---------- สร้างรหัส location ----------
+
+df_front = pl.DataFrame({
+    "zone": [1, 3, 5],
+    "gon":  [99, 99, 99],
+    "bay":  [150, 150, 150],
+})
+
+df_back = pl.DataFrame({
+    "zone": ["B"],
+    "bay":  [1000],
+})
+
+# ---------- สร้างรหัส location ----------
+
+result = (
+    df_front
+    .with_columns(
+        gon=pl.int_ranges(1, pl.col("gon") + 1),
+        bay=pl.int_ranges(1, pl.col("bay") + 1),
+    )
+    .explode("gon")
+    .explode("bay")
+    .with_columns(
+        location=pl.concat_str([
+            pl.col("zone").cast(pl.Utf8),
+            pl.col("gon").cast(pl.Utf8).str.zfill(2),
+            pl.col("bay").cast(pl.Utf8).str.zfill(3),
+        ])
+    )
+    .select("location")
+)
+
+result_back = (
+    df_back
+    .with_columns(bay=pl.int_ranges(1, pl.col("bay") + 1))
+    .explode("bay")
+    .with_columns(
+        location=pl.concat_str([
+            pl.col("zone"),
+            pl.col("bay").cast(pl.Utf8).str.zfill(5),
+        ])
+    )
+    .select("location")
+)
+
+df_location_masters = pl.concat([result, result_back]).with_columns(
+    stocktakeid=pl.lit(countName)
+)
+
+# ---------- connect to databases ----------
+
 engine_master = create_engine(f"sqlite:///{path_master}")
 
-query_plan = text("""
+# ---------- ดึง plan ----------
+query_plan = """
     SELECT branch
-    FROM planall2 
-    WHERE bu = :bu 
-      AND stcode = :stcode 
-      AND atype = :atype 
+    FROM planall2
+    WHERE bu = :bu
+      AND stcode = :stcode
+      AND atype = :atype
       AND cntdate = :cntdate
-""")
+"""
 
-params = {
-    "bu": bu,
-    "stcode": stcode,
-    "atype": atype,
-    "cntdate": cntdate
-}
+params = {"bu": bu, "stcode": stcode, "atype": atype, "cntdate": cntdate}
 
-plan = pd.read_sql_query(query_plan, engine_db, params=params)
+plan = pl.read_database(
+    query_plan,
+    connection=engine1,
+    execute_options={"parameters": params},
+)
 
-
-if not plan.empty:
+if not plan.is_empty():
     countName = bu + stcode + atype[-1] + cntdate + '001'
     storeCode = stcode
-    branch = plan['branch'].iloc[0]
+    branch = plan["branch"][0]
     storeName = branch
 
-    q_users_pass = text("""
-    SELECT employee_code as username, encryptedpassword, employee_code as empCode
-    FROM employees
-    WHERE last_work_date is null or last_work_date > CURRENT_DATE
-                  """)
-    df_users = pd.read_sql_query(q_users_pass, engine_db)
+    df_users = pl.read_database(
+        """
+        SELECT employee_code as username,
+               encryptedpassword,
+               employee_code as "empCode"
+        FROM employees
+        WHERE last_work_date is null or last_work_date > CURRENT_DATE
+        """,
+        connection=engine1,
+    )
+    df_extra_users = pl.DataFrame({
+        "username": [f"{i:03d}" for i in range(1, 51)],
+    }).with_columns(
+        encryptedpassword=pl.lit("$2a$10$d.QrLlbWIQwZ/hoqBFxCVeSJTvQTyy/KSW7kh3Rf6bnMcnKWpKCrS"),
+        empCode=pl.col("username"),
+    )
 
-    query_get_master = text("""
-    SELECT 
-        upc as ibc,
-        des as "productName",
-        0 as stock,
-        price as "retailPrice",
-        'A' as status
-    FROM b2s_master_bar
-    union all
-    select distinct 
-        lpad(sku,13,'0') as ibc,
-        des as "productName",
-        0 as stock,
-        price as "retailPrice",
-        'A' as status
-    from b2s_master_bar
-    """)
+    df_users = pl.concat(
+        [df_users, df_extra_users.select(df_users.columns)],
+        how="vertical_relaxed",
+    )
 
-    df_get_master = pd.read_sql_query(query_get_master, engine_db3)
+    query_get_master = """
+        SELECT
+            upc as ibc,
+            des as "productName",
+            0 as stock,
+            price as "retailPrice",
+            'A' as status
+        FROM b2s_master_bar
+    """
 
-
-    # 👉 pad barcode ใน pandas (ปลอดภัยทุก DB)
-    df_get_master['sku'] = df_get_master['ibc'].astype(str).str.zfill(13)
-    df_get_master['barcodeIBC'] = df_get_master['sku']
-
-    df_get_master['stocktakeid'] = countName
-    df_get_master['storeCode'] = storeCode
-    df_get_master['storeName'] = storeName
-
-    df_get_master.drop(columns=['ibc'], inplace=True)
+    df_get_master = (
+        pl.read_database(query_get_master, connection=engine3)
+        .with_columns(
+            pl.col("retailPrice").cast(pl.Float64),
+            sku=pl.col("ibc").cast(pl.Utf8).str.zfill(13)   # pad barcode
+        )
+        .with_columns(
+            barcodeIBC=pl.col("sku"),
+            stocktakeid=pl.lit(countName),
+            storeCode=pl.lit(storeCode),
+            storeName=pl.lit(storeName),
+        )
+        .drop("ibc")
+    )
 
     with engine_master.begin() as connection:
         connection.execute(text("""
@@ -93,26 +159,48 @@ if not plan.empty:
             "storeCode": storeCode,
             "bu": bu,
             "branch": branch,
-            "storeName": storeName
+            "storeName": storeName,
         })
+        print(f"Updated stocktakes with new {countName}, {storeCode}, {bu}, {branch}, and {storeName}")
 
         connection.execute(text("DELETE FROM pda_masters"))
+        print("Deleted all rows from pda_masters")
         connection.execute(text("DELETE FROM users"))
+        print("Deleted all rows from users")
+        connection.execute(text("DELETE FROM location_masters"))
+        print("Deleted all rows from location_masters")
+        connection.execute(text("DELETE FROM sqlite_sequence WHERE name='location_masters'"))
+        print("Reset sqlite_sequence for location_masters")
         connection.execute(text("DELETE FROM sqlite_sequence WHERE name='pda_masters'"))
+        print("Reset sqlite_sequence for pda_masters")
         connection.execute(text("DELETE FROM sqlite_sequence WHERE name='users'"))
+        print("Reset sqlite_sequence for users")
 
-        df_get_master.to_sql('pda_masters', con=connection, if_exists='append', index=False)
-        df_users.to_sql('users', con=connection, if_exists='append', index=False)
+        df_get_master.write_database(
+            "pda_masters", connection=connection,
+            if_table_exists="append", engine="sqlalchemy",
+        )
+        print(f"✅ Inserted Master {df_get_master.height} records")
+        df_users.write_database(
+            "users", connection=connection,
+            if_table_exists="append", engine="sqlalchemy",
+        )
+        print(f"✅ Inserted Users {df_users.height} records")
 
-        print(f"✅ Inserted {len(df_get_master)} records")
+        df_location_masters.write_database(
+            "location_masters", connection=connection,
+            if_table_exists="append", engine="sqlalchemy",
+        )
+        print(f"✅ Inserted Location {df_location_masters.height} records")
 
-    # 👉 VACUUM (ต้องอยู่นอก transaction)
+
+    # VACUUM (ต้องอยู่นอก transaction)
     with engine_master.connect() as conn:
         conn.execute(text("VACUUM"))
+        print("Vacuumed the master database")
 
-    shutil.copy(path_master, f"D:\\{countName}.db")
+    shutil.copy(path_master, dest)
+    print(f"✅ Master database created: {dest}")
 
-    print(f"✅ Master database created: D:\\{countName}.db")
-    
 else:
     print("No plan found for the given parameters.")

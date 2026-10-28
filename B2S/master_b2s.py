@@ -93,7 +93,7 @@ plan = pl.read_database(
 )
 
 if not plan.is_empty():
-    countName = bu + stcode + atype[-1] + cntdate + '001'
+    
     storeCode = stcode
     branch = plan["branch"][0]
     storeName = branch

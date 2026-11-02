@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime, timedelta
 
 # Set the time threshold in hours
-hour = 600
+hour = 24
 
 user_path = pathlib.Path.home()
 

@@ -243,28 +243,28 @@ q_dept_cfr = f"""
                 cntdate,
                 rpname,
                 skutype,
-                dpt as dept,
-                sdpt as sub_dept,
+                dept as dept,
+                sub_dept as sub_dept,
                 count(*) as sku_count,
-                sum(case when qty_var = 0 then 1 else 0 end) as sku_eq,
-                sum(case when qty_var > 0 then 1 else 0 end) as sku_gain,
-                sum(case when qty_var < 0 then 1 else 0 end) as sku_loss,
-                sum(soh) as qnt_soh,
-                sum(qty_count) as qnt_physical,
-                sum(case when qty_var > 0 then qty_var else 0 end) as qnt_gain,
-                sum(case when qty_var < 0 then qty_var else 0 end) as qnt_loss,
-                sum(qty_var) as qnt_variance,
-                sum(soh*retail) as retail_soh,
-                sum(soh*"cost") as cost_soh,
-                sum(phycnt_rtl) as retail_physical,
-                sum(phycnt_cst) as cost_physical,
-                sum(case when extrtl_var  > 0 then extrtl_var  else 0 end) as retail_gain,
-                sum(case when extcst_var  > 0 then extcst_var  else 0 end) as cost_gain,
-                sum(case when extrtl_var < 0 then extrtl_var else 0 end) as retail_loss,
-                sum(case when extcst_var < 0 then extcst_var else 0 end) as cost_loss,
-                sum(extrtl_var) as retail_net,
-                sum(extcst_var) as cost_net
-            from ofm_stk_this_year osty 
+                sum(case when variance = 0 then 1 else 0 end) as sku_eq,
+                sum(case when variance > 0 then 1 else 0 end) as sku_gain,
+                sum(case when variance < 0 then 1 else 0 end) as sku_loss,
+                sum(stock) as qnt_soh,
+                sum(qnt) as qnt_physical,
+                sum(case when variance  > 0 then variance else 0 end) as qnt_gain,
+                sum(case when variance < 0 then variance else 0 end) as qnt_loss,
+                sum(variance) as qnt_variance,
+                sum(qnt_retail-var_retail) as retail_soh,
+                sum(qnt_cost-var_cost) as cost_soh,
+                sum(qnt_retail) as retail_physical,
+                sum(qnt_cost) as cost_physical,
+                sum(case when var_retail  > 0 then var_retail  else 0 end) as retail_gain,
+                sum(case when var_cost  > 0 then var_cost  else 0 end) as cost_gain,
+                sum(case when var_retail < 0 then var_retail else 0 end) as retail_loss,
+                sum(case when var_cost < 0 then var_cost else 0 end) as cost_loss,
+                sum(var_retail) as retail_net,
+                sum(var_cost) as cost_net
+            from cfr_stk_this_year osty 
             where rpname = 'STK2'
                 and cntdate between '{sdate}' and '{edate}'
             group by 
@@ -272,8 +272,8 @@ q_dept_cfr = f"""
                 cntdate,
                 rpname,
                 skutype,
-                dpt,
-                sdpt
+                dept,
+                sub_dept
                 """
 df_dept_cfr = pl.read_database_uri(q_dept_cfr, engine3)
 print(f"✅ CFR department report data retrieved successfully. Total rows: {len(df_dept_cfr)}")

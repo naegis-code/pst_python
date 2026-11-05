@@ -1,19 +1,52 @@
-import pandas as pd
 import polars as pl
-from sqlalchemy import create_engine,text
-import db_connect
 
-engine3 = create_engine(db_connect.db_url_pstdb3)
-engine5 = create_engine(db_connect.db_url_pstdb5)
 
-query3 = text("""
-SELECT * FROM b2s_master_bar
-""")
+df_front = pl.DataFrame({
+    "zone": [1, 3, 5],
+    "gon":  [99, 99, 99],
+    "bay":  [150, 150, 150],
+})
 
-df = pl.read_database(query3, engine3)
+df_back = pl.DataFrame({
+    "zone": 'B',
+    "bay":  1000,
+})
 
-df = df.to_pandas()
+result = (
+    df_front
+    .with_columns(
+        gon=pl.int_ranges(1, pl.col("gon") + 1),   # [1,2,...,99]
+        bay=pl.int_ranges(1, pl.col("bay") + 1),   # [1,2,...,150]
+    )
+    .explode("gon")      # แตกเป็นแถว
+    .explode("bay")
+    .with_columns(
+        location=pl.concat_str([
+            pl.col("zone").cast(pl.Utf8),
+            pl.col("gon").cast(pl.Utf8).str.zfill(2),
+            pl.col("bay").cast(pl.Utf8).str.zfill(3),
+        ])
+    )
+    .select(["location"])
+)
 
-df.to_sql('b2s_master_bar', engine5, if_exists='append', index=False)
+result_back = (
+    df_back
+    .with_columns(
+        bay=pl.int_ranges(1, pl.col("bay") + 1),   # [1,2,...,1000]
+    )
+    .explode("bay")
+    .with_columns(
+        location=pl.concat_str([
+            pl.col("zone").cast(pl.Utf8),
+            pl.col("bay").cast(pl.Utf8).str.zfill(5),
+        ])
+    )
+    .select(["location"])
+)
 
-print(df.head())
+result_all = pl.concat([result, result_back])
+
+print(result)
+print(result_back)
+print(result_all)

@@ -28,7 +28,7 @@ if windows:
     windows[0].activate()
     py.write('ODTHAI')
     py.press('tab')
-    py.write('MMB2SLIB/CYPRC(BHOSTRTPP)')
+    py.write('MMB2SUSR/INV551P1(BHOSTRTPP)')
     py.press('tab', presses=3)
     py.write('f')
     py.press('tab')

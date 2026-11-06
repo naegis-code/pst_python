@@ -125,13 +125,42 @@ if not plan.is_empty():
     )
 
     query_get_master = """
-        SELECT
-            upc as ibc,
-            des as "productName",
-            0 as stock,
-            price as "retailPrice",
-            'A' as status
-        FROM b2s_master_bar
+                with b_sku as (
+                select sku 
+                from b2s_block_sku bsbs2
+                where start_date between '2026-11-01' and '2026-11-30'
+                ), b_vendor_a as (
+                select veno ,remark 
+                from b2s_block_veno
+                where start_date between '2026-11-01' and '2026-11-30'
+                ), b_veno_b as (
+                select bsm.sku_no ,bsm.vendor ,bsm.sku_type ,bsm.dept ,bsm.sub_dpt ,bsm.brand_desc ,bva.remark ,
+                    case 
+                        when bva.remark = 'Block_All' then 1
+                        when bva.remark = 'Block_Consign' and bsm.sku_type = '02' then 1
+                        when bva.remark = 'Block_Credit_Consign_SDept136' and bsm.sub_dpt = '136' then 1
+                        when bva.remark = 'Block_Consign_Brand_LAMY' and bsm.sku_type = '02' and bsm.brand_desc = 'LAMY' then 1
+                        when bva.remark = 'Count Dept 100' and bsm.dept <> '100' then 1
+                    else 0 end as status_remove
+                from b2s_master bsm 
+                left join b_vendor_a bva on bsm.vendor = bva.veno 
+                where bva.remark is not null
+                ), b_veno as (
+                select *
+                from b_veno_b
+                where status_remove = 1
+                )
+                select
+                    b.upc as ibc,
+                    b.des as "productName",
+                    0 as stock,
+                    b.price as "retailPrice",
+                    'A' as status
+                FROM b2s_master_bar b
+                left join b_sku on substring(b.sku,3,7) = b_sku.sku 
+                left join b_veno on substring(b.sku,3,7) = b_veno.sku_no
+                where b_sku.sku is null
+                    and b_veno.sku_no is null
     """
 
     df_get_master = (

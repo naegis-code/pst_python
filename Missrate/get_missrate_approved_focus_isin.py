@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 
 
 stcode_cntdate = [
-    ('090','20261001'),
-    ('008','20260910'),
-    ('532','20260911'),
-    ('129','20260917'),
+    ('464','20261012'),
+    #('008','20260910'),
+    #('532','20260911'),
+    #('129','20260917'),
 ]
 
 cond_df = pd.DataFrame(stcode_cntdate, columns=['stcode', 'cntdate'])

@@ -136,3 +136,5 @@ def import_stk_report(bu):
 
 if __name__ == '__main__':
     import_stk_report('B2S')
+    import_stk_report('OFM')
+    import_stk_report('SSP')

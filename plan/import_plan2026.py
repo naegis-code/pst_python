@@ -169,7 +169,7 @@ try:
         print(error_message)
         raise
 
-    #db_url = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb'
+    #db_url = 'postgresql+psycopg2://<user>:<password>@localhost:5432/pstdb'
 
 
     try:

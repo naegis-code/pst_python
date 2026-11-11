@@ -1,12 +1,18 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
 
 # Define the path to the CSV file
 path_soh = r'D:\Users\prthanap\OneDrive - Central Group\python\B2S\soh.csv'
 
 # Create a connection to the PostgreSQL database
-engine = create_engine('postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb3')
+engine = create_engine(f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@103.22.182.82:5432/pstdb3')
 
 # Define the column names
 column_names = ['msstor','msstrn','mstrnc','mstrnd','mstype','msvdno','msvdnm','msdept','msdptn','mssdpt',
@@ -28,7 +34,7 @@ df.to_sql('b2s_soh', engine, if_exists='append', index=False)
 
 '''
 # Create a connection to the database
-engine = create_engine('postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb3')
+engine = create_engine(f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@103.22.182.82:5432/pstdb3')
 query = text('SELECT * FROM b2s_master_initial')
 df_pg = pd.read_sql(query, engine)
 

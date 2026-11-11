@@ -1,6 +1,12 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv,find_dotenv
+import os
+
+load_dotenv(find_dotenv())
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
 
 bu = 'CHG'
 stcode = '60983'
@@ -11,7 +17,7 @@ skutype = 'Credit'
 file = 'VAR2_Credit_CHG_60983_260827.xls'
 path = f"D:\\Users\\prthanap\\Documents\\chg\\{file}"
 
-engine3 = create_engine("postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb3")
+engine3 = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@localhost:5432/pstdb3")
 
 def process_chg_var(file_contents: bytes, bu: str, stcode: str, cntdate: str, rpname: str, skutype: str, engine3, username: str):
 

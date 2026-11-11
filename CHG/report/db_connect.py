@@ -1,4 +1,11 @@
-db_url_pstdb = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb'
-db_url_pstdb2 = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb2'
-db_url_pstdb3 = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb3'
-db_url_pstdb3_native = 'postgresql://prthanapat:20020015@localhost:5432/pstdb3'
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
+db_url_pstdb = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@localhost:5432/pstdb'
+db_url_pstdb2 = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@localhost:5432/pstdb2'
+db_url_pstdb3 = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@localhost:5432/pstdb3'
+db_url_pstdb3_native = f'postgresql://{DB_USER}:{DB_PASS}@localhost:5432/pstdb3'

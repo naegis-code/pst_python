@@ -1,5 +1,12 @@
 import pandas as pd
 from sqlalchemy import create_engine,text
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
 
 path1 = r'D:\Users\prthanap\Central Group\PST Performance Team - เอกสาร\Report\2024\99 Plan\Annual Plan 2024 All Update (By Div).xlsx'
 path2 = r'C:\Users\Administrator\Central Group\PST Performance Team - Documents\Report\2024\99 Plan\Annual Plan 2024 All Update (By Div).xlsx'
@@ -87,7 +94,7 @@ df = df[keepcolumn]
 
 
 # Database connection string
-db_url = 'postgresql+psycopg2://prthanapat:20020015@localhost:5432/pstdb'
+db_url = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@localhost:5432/pstdb'
 
 # Create the engine to connect to PostgreSQL
 engine = create_engine(db_url)

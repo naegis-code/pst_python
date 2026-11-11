@@ -1,4 +1,6 @@
 import io
+import os
+from dotenv import load_dotenv, find_dotenv
 import json
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile, status
 import pandas as pd
@@ -8,8 +10,10 @@ from upload_chg import process_chg_stk,process_chg_var,process_chg_nocount,proce
 
 app = FastAPI()
 
-user = "prthanapat"
-paas = "20020015"
+load_dotenv(find_dotenv())
+
+user = os.getenv('DB_USER')
+paas = os.getenv('DB_PASS')
 
 # ตั้งค่า Pool Connection รองรับผู้ใช้พร้อมกัน
 engine1 = create_engine(

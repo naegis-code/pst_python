@@ -24,9 +24,16 @@ print(f"Running {table} at {timestamp} with {len(df)} rows")
 
 # Create a connection to the database
 from sqlalchemy.exc import SQLAlchemyError
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
 
 # Use environment variables or a configuration file for sensitive information
-db_url_pstdb = 'postgresql+psycopg2://prthanapat:20020015@103.22.182.82:5432/pstdb2'
+db_url_pstdb = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@103.22.182.82:5432/pstdb2'
 
 try:
     # Create database connection

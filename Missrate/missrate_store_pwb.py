@@ -1,9 +1,13 @@
 import pandas as pd
 from sqlalchemy import create_engine,text
 import datetime
+import os
+from dotenv import load_dotenv, find_dotenv
 
-user = 'prthanapat'
-password = '20020015'
+load_dotenv(find_dotenv())
+
+user = os.getenv('DB_USER')
+password = os.getenv('DB_PASS')
 date_start_manual = '20260101'
 date_end_manual = '20261231'
 

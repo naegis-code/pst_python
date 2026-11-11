@@ -8,6 +8,10 @@ from datetime import datetime,date
 import db_connect
 from tkcalendar import DateEntry
 import shutil
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 def run_process():
     try:
@@ -20,8 +24,8 @@ def run_process():
         cntdate_pick = date_var.get()
         cntdate = datetime.strptime(cntdate_pick, '%Y-%m-%d').strftime('%d%m%y')
 
-        username = 'prthanapat'
-        password = '20020015'
+        username = os.getenv('DB_USER')
+        password = os.getenv('DB_PASS')
 
         # Step 1: Get store name
         engine = create_engine(db_connect.db_url_pstdb)

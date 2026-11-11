@@ -4,6 +4,10 @@ from pathlib import Path
 import pandas as pd
 from datetime import datetime
 import db_connect
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 # Constants
 path_db = Path('D:/Program Files/pooledstocktake/b2s/Apps/pda-master.db')
@@ -15,8 +19,8 @@ stcode = '50100'
 cntdate_pick = '2025-07-10'
 cntdate = datetime.strptime(cntdate_pick, '%Y-%m-%d').strftime('%d%m%y')
 
-username = 'prthanapat'
-password = '20020015'
+username = os.getenv('DB_USER')
+password = os.getenv('DB_PASS')
 
 # Step 1: Get store name from main DB
 engine = create_engine(db_connect.db_url_pstdb)

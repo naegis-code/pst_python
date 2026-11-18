@@ -14,8 +14,8 @@ load_dotenv(find_dotenv())
 script_name = 'outsource_2027.py'
 
 def send_telegram(message):
-    token = "8694562639:AAG8TbsWxIDg9VVoLVn_qdloCgQoDNFwxMw"
-    chat_id = "-5181414443"
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
     

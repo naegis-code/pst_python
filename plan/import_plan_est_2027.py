@@ -7,14 +7,19 @@ import pathlib
 import os
 import requests
 import traceback
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tunnel import engine1  # import แล้วจะเช็ค/เปิด SSH tunnel ให้อัตโนมัติ (ensure_tunnel)
 
 load_dotenv(find_dotenv())
 
 script_name = 'import_plan_est_2027.py'
 
 def send_telegram(message):
-    token = "8694562639:AAG8TbsWxIDg9VVoLVn_qdloCgQoDNFwxMw"
-    chat_id = "-5181414443"
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
     
@@ -35,11 +40,6 @@ try:
     # Set file path
     user_path = pathlib.Path.home()
     
-
-    if user_path.name == 'prthanap':
-        engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
-    else:
-        engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@103.22.182.82:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
 
     if (user_path / 'Central Group/PST Performance Team - เอกสาร').exists():
         filepath = user_path / 'Central Group/PST Performance Team - เอกสาร'

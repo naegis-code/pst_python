@@ -7,14 +7,19 @@ import pathlib
 import os
 import requests
 import traceback
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tunnel import engine1  # import แล้วจะเช็ค/เปิด SSH tunnel ให้อัตโนมัติ (ensure_tunnel)
 
 load_dotenv(find_dotenv())
 
 script_name = 'import_plan_est_2026.py'
 
 def send_telegram(message):
-    token = "8694562639:AAG8TbsWxIDg9VVoLVn_qdloCgQoDNFwxMw"
-    chat_id = "-5181414443"
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
     
@@ -31,7 +36,7 @@ def send_telegram(message):
 # ตั้งค่าให้โชว์คอลัมน์ครบ (ไม่ตัด ...)
 #pl.Config.set_tbl_cols(-1).set_tbl_rows(-1)
 try : 
-    engine = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@localhost:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
+    engine = engine1  # pstdb ผ่าน tunnel.py
 
     query = text("""SELECT * FROM date_master;""")
     df_date_master = pl.read_database(query, engine)

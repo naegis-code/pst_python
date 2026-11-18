@@ -1,9 +1,13 @@
 import pandas as pd
-from sqlalchemy import create_engine,text
+from sqlalchemy import text
 from datetime import datetime
-import db_connect
 import numpy as np
 import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from tunnel import engine1  # import แล้วจะเช็ค/เปิด SSH tunnel ให้อัตโนมัติ (pstdb)
 
 # Set file path
 user_path = pathlib.Path.home()
@@ -15,7 +19,7 @@ else:
 
 export_path = filepath / 'Apps'
 
-engine = create_engine(db_connect.db_url_pstdb)
+engine = engine1
 
 query_plan = text("""SELECT * FROM planall2
                   Where atype in ('3F','3Q','4V')""")

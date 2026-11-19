@@ -1,8 +1,8 @@
 import pandas as pd
+from copy_util import copy_df
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
-from tqdm import tqdm
 import os
 from sqlalchemy.exc import SQLAlchemyError
 import pathlib
@@ -67,30 +67,21 @@ timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 print(f"Running {table} at {timestamp} with {len(df)} rows")
 
 try:
-    # Create database connection
-    
-    conn = engine2.connect()
-    
-    # Use chunks for efficient insertion
-    chunk_size = 1000  # Adjust based on performance
-    total_chunks = len(df) // chunk_size + (1 if len(df) % chunk_size > 0 else 0)
-    
-    with tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
-        for i in range(0, len(df), chunk_size):
-            df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
-            pbar.update(1)
-    
-    conn.close()
+    n = copy_df(engine2, table, df)
+    print(f"Copied {n:,} rows into {table}")
     
     # Success message
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data {table} imported to database successfully at {timestamp}")
 except FileNotFoundError:
 	print("Error: The specified file was not found.")
+	raise
 except SQLAlchemyError as e:
 	print(f"Database error occurred: {e}")
+	raise
 except Exception as e:
 	print(f"An unexpected error occurred: {e}")
+	raise
       
 
 df['msstoh'] = pd.to_numeric(df['msstoh'], errors='coerce') # Convert to float, invalid entries become NaN

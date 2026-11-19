@@ -139,4 +139,5 @@ if __name__ == '__main__':
     import_stk_report('OFM')
     import_stk_report('SSP')
     import_stk_report('PWB')
+    import_stk_report('CHG')
     import_stk_report('CFW')

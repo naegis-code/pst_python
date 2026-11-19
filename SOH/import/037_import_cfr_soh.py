@@ -1,4 +1,5 @@
 import pandas as pd
+from copy_util import copy_df
 from sqlalchemy import create_engine
 from datetime import datetime
 import os
@@ -99,15 +100,18 @@ from sqlalchemy.exc import SQLAlchemyError
 
 try:
 
-	df.to_sql('cfr_soh2', con=engine2, if_exists='append', index=False)
+	copy_df(engine2, 'cfr_soh2', df)
 	timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 	print(f"Data cfr_soh2 imported to database successfully at {timestamp}")
 except FileNotFoundError:
 	print("Error: The specified file was not found.")
+	raise
 except SQLAlchemyError as e:
 	print(f"Database error occurred: {e}")
+	raise
 except Exception as e:
 	print(f"An unexpected error occurred: {e}")
+	raise
 	
 df.rename(columns={"data_date": "DATE"}, inplace=True)
 

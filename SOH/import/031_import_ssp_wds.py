@@ -1,52 +1,23 @@
-import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
-from tqdm import tqdm
+import sys
 import os
 import pathlib
-from dotenv import load_dotenv, find_dotenv
-import socket
-import subprocess
-import time
+from datetime import datetime
 
-# ==================== โหลดค่าจาก .env ====================
-load_dotenv(find_dotenv())
+import pandas as pd
+from sqlalchemy.exc import SQLAlchemyError
+from copy_util import copy_df
 
-def is_port_open(host, port, timeout=2):
-    """เช็คว่าพอร์ต local เปิด (มีอะไร listening อยู่) หรือไม่"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(timeout)
-        result = s.connect_ex((host, port))
-        return result == 0
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from tunnel import engine1, engine2, ensure_tunnel, DB_CONN_STR  # engine1=pstdb, engine2=pstdb2
 
-DB_HOST = "localhost"
-DB_PORT = 5432
-
-if is_port_open(DB_HOST, DB_PORT):
-    print(f"✅ พอร์ต {DB_PORT} ที่ {DB_HOST} เปิดอยู่ — tunnel ทำงานอยู่")
-else:
-    print(f"❌ พอร์ต {DB_PORT} ที่ {DB_HOST} ปิดอยู่ — tunnel ยังไม่เปิด")
-    subprocess.Popen(
-        "start /b ssh -f -N pst-db",
-        shell=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW
-    )
-    print("🔑 กำลังเปิด SSH tunnel... (รอ 5 วินาที)")
-    time.sleep(5)
-    print("✅ SSH tunnel เปิดแล้ว") if is_port_open(DB_HOST, DB_PORT) else print("❌ SSH tunnel ยังไม่เปิด — ตรวจสอบการเชื่อมต่อ SSH")
-
-engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
-engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
+ensure_tunnel(DB_CONN_STR)
 
 # ==================== CONFIG ====================
 bu = 'SSP'
 path = pathlib.Path.home() / 'Documents' / 'soh' / 'wds'
 table = 'sspwds_soh'
 table_soh_update = 'soh_update'
-chunk_size = 1000
 # ==================================================
 
 # ==================== READ EXCEL FILES ====================
@@ -97,16 +68,8 @@ print(f"[*] Running {table} at {timestamp} with {len(df)} rows")
 
 # ==================== INSERT RAW DATA ====================
 try:
-    total_chunks = len(df) // chunk_size + (len(df) % chunk_size > 0)
-
-    with engine2.begin() as conn, tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
-        for i in range(0, len(df), chunk_size):
-            df.iloc[i:i + chunk_size].to_sql(
-                table, conn, if_exists='append', index=False
-            )
-            pbar.update(1)
-
-    print(f"✅ Data imported to {table}")
+    n = copy_df(engine2, table, df)
+    print(f"✅ Data imported to {table} ({n:,} rows)")
 
 except SQLAlchemyError as e:
     raise RuntimeError(f"DB insert failed: {e}")
@@ -122,6 +85,13 @@ df = df.merge(df_cuscode, on='cuscode', how='left')
 # ==================== TRANSFORM ====================
 df['soh'] = pd.to_numeric(df['soh'], errors='coerce')
 df = df[df['soh'] > 0]
+
+# cuscode ที่ไม่มี mapping จะได้ stcode เป็น NaN แล้วหายตอน groupby — เตือนให้เห็น
+unmapped = df[df['stcode'].isna()]
+if not unmapped.empty:
+    print(f"⚠️ พบ {len(unmapped)} แถวที่ cuscode ไม่มีใน ssp_wds_cuscode (จะไม่ถูกนับใน soh_update):")
+    print(unmapped[['cuscode', 'cusname']].drop_duplicates().to_string(index=False))
+    df = df[df['stcode'].notna()]
 
 df = df[['stcode', 'data_date', 'soh']]
 df = df.rename(columns={'data_date': 'DATE'})
@@ -149,6 +119,7 @@ try:
     print(f"✅ Data inserted into '{table_soh_update}'")
 
     # ==================== DELETE FILES ====================
+    # ลบทุกไฟล์ในโฟลเดอร์ (รวมไฟล์ว่าง 0 KB ที่ถูกข้ามตอนอ่าน)
     for file in path.iterdir():
         if file.is_file():
             try:

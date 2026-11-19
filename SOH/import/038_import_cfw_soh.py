@@ -1,15 +1,20 @@
-import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
-from tqdm import tqdm
-import os
-from db_connect import db_url_pstdb, db_url_pstdb2
-from sqlalchemy.exc import SQLAlchemyError
+import sys
 from pathlib import Path
 
+import pandas as pd
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+from copy_util import copy_df
+import os
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from tunnel import engine1, engine2, ensure_tunnel, DB_CONN_STR  # engine1=pstdb, engine2=pstdb2
+
+ensure_tunnel(DB_CONN_STR)
+
 bu = 'CFW'
-path = Path('D:/Users/prthanap/Downloads/cfw_soh.xlsx')
+path = Path.home() / 'Downloads' / 'cfw_soh.xlsx'
 table = 'cfw_soh'
 table_soh_update = 'soh_update'
 
@@ -24,68 +29,69 @@ keep_columns = ['msstor', 'msstrn', 'mstrnc', 'mstrnd', 'mstype', 'msvdno', 'msv
                 'mssdpn','msbrnd', 'msclas', 'msclsn', 'msscls', 'msscln', 'mssku', 'mssdes', 'msibc', 'msstoh',
                 'msstkc', 'msasdt', 'mspoor', 'mstoor', 'mssbc']
 
-# ข้าม คอลัมน์ที่ไม่อยู่ใน keep_columns
+# คอลัมน์ที่ขาดไม่ได้ ถ้าไม่มีให้หยุดทันที (ไม่ข้ามเงียบๆ)
+required_columns = ['msstor', 'msstoh', 'msasdt']
+missing_required = [c for c in required_columns if c not in df.columns]
+if missing_required:
+    raise RuntimeError(f"ไฟล์ขาดคอลัมน์ที่จำเป็น: {missing_required}")
+
+# ข้ามคอลัมน์ที่ไม่อยู่ใน keep_columns (คอลัมน์เสริมที่ไม่มีไม่เป็นไร)
 df = df[[col for col in keep_columns if col in df.columns]]
+
+if df['msasdt'].isna().any():
+    raise RuntimeError(f"พบ msasdt ที่แปลงเป็นวันที่ไม่ได้ {int(df['msasdt'].isna().sum())} แถว — ตรวจไฟล์ก่อน import")
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 print(f"Running {table} at {timestamp} with {len(df)} rows")
 
+# ==================== INSERT RAW DATA (pstdb2) ====================
+# ถ้าขั้นนี้ล้มเหลวให้หยุดทั้งสคริปต์ ไม่ไปต่อที่ soh_update และไม่ rename ไฟล์
 try:
-    # Create database connection
-    engine = create_engine(db_url_pstdb2)
-    conn = engine.connect()
-    
-    # Use chunks for efficient insertion
-    chunk_size = 1000  # Adjust based on performance
-    total_chunks = len(df) // chunk_size + (1 if len(df) % chunk_size > 0 else 0)
-    
-    with tqdm(total=total_chunks, desc="Inserting Data", unit="chunk") as pbar:
-        for i in range(0, len(df), chunk_size):
-            df.iloc[i:i+chunk_size].to_sql(table, con=conn, if_exists='append', index=False)
-            pbar.update(1)
-    
-    conn.close()
-    
-    # Success message
+    n = copy_df(engine2, table, df)
+    print(f"Copied {n:,} rows into {table}")
+
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Data {table} imported to database successfully at {timestamp}")
-except FileNotFoundError:
-	print("Error: The specified file was not found.")
 except SQLAlchemyError as e:
-	print(f"Database error occurred: {e}")
-except Exception as e:
-	print(f"An unexpected error occurred: {e}")
+    raise RuntimeError(f"DB insert failed ({table}): {e}") from e
 
-df['msasdt'] = pd.to_datetime(df['msasdt'], format='%Y%m%d', errors='coerce').dt.strftime('%Y%m%d')
+# ==================== TRANSFORM ====================
+# msasdt เป็น date อยู่แล้ว (แปลงไว้ด้านบน) จึงแปลงเป็น YYYYMMDD ตรงๆ
+# (เดิมส่ง format='%Y%m%d' ให้ค่า date ทำให้กลายเป็น NaT แล้ว groupby ทิ้งทุกแถว)
+df['msasdt'] = pd.to_datetime(df['msasdt']).dt.strftime('%Y%m%d')
 
-# Ensure 'mstype' is treated as a string and fill missing values with '0'
 if 'mstype' not in df.columns:
     df['mstype'] = '1'
-
-print(df.info())
+# '01' -> '1' เพื่อให้เทียบกับ '1','2','3' ได้
+df['mstype'] = df['mstype'].astype(str).str.strip().str.lstrip('0')
 
 keep_columns = ["msstor", "mstype", "msasdt", "msstoh"]
-df = df[keep_columns]
+df = df[keep_columns].copy()
 
-df.rename(columns={"msstor": "stcode", "msasdt": "DATE"}, inplace=True)
-df['bu'] = bu # Set the business unit
+df = df.rename(columns={"msstor": "stcode", "msasdt": "DATE"})
+df['bu'] = bu
 df['code'] = df['bu'] + df['stcode']
 
 df['food_credit'] = df['msstoh'].where(df['mstype'] == '1', 0)
 df['nonfood_consign'] = df['msstoh'].where(df['mstype'] == '2', 0)
 df['perishable_nonmer'] = df['msstoh'].where(df['mstype'] == '3', 0)
 
-df.rename(columns={"msstoh": "totalsoh"}, inplace=True)
+df = df.rename(columns={"msstoh": "totalsoh"})
 
 df = df.groupby(["code", "bu", "stcode", "DATE"], as_index=False).sum(numeric_only=True)
 
-engine = create_engine(db_url_pstdb)
+if df.empty:
+    raise RuntimeError("ไม่มีแถวเหลือสำหรับ soh_update หลัง transform — ตรวจข้อมูลต้นทาง")
+
+print(df.head())
+
+# ==================== INSERT SOH UPDATE (pstdb) ====================
 try:
-    df.to_sql(table_soh_update, engine, if_exists='append', index=False)
-    print(f"✅ Data inserted into '{table_soh_update}' at {timestamp}")
+    df.to_sql(table_soh_update, engine1, if_exists='append', index=False)
+    print(f"✅ Data inserted into '{table_soh_update}' at {timestamp} ({len(df)} rows)")
     os.replace(path, path.with_suffix('.imported'))
     print("🗑️ File renamed to:", path.with_suffix('.imported'))
 except SQLAlchemyError as e:
     print("❌ Failed to insert data into database.")
     print("Error:", e)
-    print("⚠️ File was NOT deleted:", path)
+    print("⚠️ File was NOT renamed:", path)

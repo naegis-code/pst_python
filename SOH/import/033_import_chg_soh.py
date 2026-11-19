@@ -1,12 +1,11 @@
 import pandas as pd
+from copy_util import copy_df
 from sqlalchemy import create_engine
 from datetime import datetime
-from tqdm import tqdm
 import os
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import timedelta
 from pathlib import Path  # Import Path from pathlib
-import math
 from dotenv import load_dotenv, find_dotenv
 import socket
 import subprocess
@@ -56,48 +55,18 @@ table = 'chg_soh' # Table name for the main data
 table_soh_update = 'soh_update'
 path = Path('D:/Users/prthanap/Downloads') / file  # Correct way to join paths using Path
 
-chunksize = 20000
+print("Reading CSV...")
+df = pd.read_csv(path, encoding='cp874', encoding_errors='replace', dtype=str, low_memory=False)
+print(f"📄 Total rows in file: {len(df):,}")
 
-# Count lines in file first (เพื่อรู้จำนวน chunk)
-with open(path, 'r', encoding='cp874', errors='ignore') as f:
-    total_lines = sum(1 for _ in f)
+# lowercase columns
+df.columns = df.columns.str.lower()
 
-# ลบ header 1 line
-total_rows = total_lines - 1
-total_chunks = math.ceil(total_rows / chunksize)
-
-print(f"📄 Total rows: {total_rows:,} → Processing in {total_chunks} chunks")
-
-# total rows csv
-with open(path, 'r', encoding='cp874', errors='ignore') as f:
-    total_lines = sum(1 for _ in f)
-total_rows = total_lines - 1  # exclude header
-print(f"📄 Total rows in file: {total_rows:,}")
-
-chunksize = 20000
-print("Reading CSV in chunks with Progress Bar...")
-
-dataframes = []
-
-for chunk in tqdm(
-        pd.read_csv(path, encoding='cp874', dtype=str, low_memory=False, chunksize=chunksize),
-        total=total_rows // chunksize + 1,
-        desc="📦 Importing",
-        unit="chunk"
-    ):
-
-    # lowercase columns
-    chunk.columns = chunk.columns.str.lower()
-
-    # strip ' only on object columns
-    obj_cols = chunk.select_dtypes(include=['object', 'string']).columns
-    chunk[obj_cols] = chunk[obj_cols].apply(lambda col: col.str.strip("'"))
-
-    chunk.to_sql(table, engine2, if_exists='append', index=False)
-
-    dataframes.append(chunk)
-
-df = pd.concat(dataframes, ignore_index=True)
+# strip ' only on object columns
+obj_cols = df.select_dtypes(include=['object', 'string']).columns
+df[obj_cols] = df[obj_cols].apply(lambda col: col.str.strip("'"))
+n = copy_df(engine2, table, df)
+print(f"Copied {n:,} rows into {table}")
 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 print(f"✅ Data inserted into '{table}' at {timestamp}")
 

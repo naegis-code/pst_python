@@ -6,6 +6,12 @@ import socket
 import subprocess
 import time
 from datetime import datetime
+import sys
+from sqlalchemy import text
+
+# engine จริงของ SQLAlchemy จาก tunnel.py (ใช้กับ UPDATE) — ตั้งชื่อ eng3 เพื่อไม่ให้ชนกับ URI string engine3 ด้านล่าง
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from tunnel import engine3 as eng3
 
 # ==================== โหลดค่าจาก .env ====================
 load_dotenv(find_dotenv())
@@ -75,6 +81,18 @@ q_plan = f"""SELECT bu,
 
 df_plan = pl.read_database_uri(q_plan, engine1)
 print(f"✅ Plan data retrieved successfully. Total rows: {len(df_plan)}")
+
+query_update = text("""
+    update ssp_stk_this_year
+       set phycnt_cst = "cost" * qty_count,
+           phycnt_rtl = retail * qty_count
+     where phycnt_cst is null
+       and cntdate between :sdate and :edate
+""")
+
+with eng3.begin() as conn:
+    conn.execute(query_update, {"sdate": sdate, "edate": edate})
+    print("✅ Updated phycnt_cst and phycnt_rtl in ssp_stk_this_year where they were null.")
 
 q_report = f"""
                 select store as stcode ,cntdate ,rpname ,skutype ,

@@ -1,14 +1,13 @@
 import pandas as pd
-from sqlalchemy import create_engine,text
-import db_connect
+from sqlalchemy import text
 import pathlib
-from dotenv import load_dotenv, find_dotenv
-import os
+import sys
 
-load_dotenv(find_dotenv())
-
-engine1 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb')}")
-engine2 = create_engine(f"{os.getenv('DB_CONN')}{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_pstdb2')}")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from tunnel import engine1  # engine1=pstdb
+from checklist_common import replace_sets
 
 # ========== PATH SETUP ==========
 userpath = pathlib.Path.home()
@@ -20,10 +19,6 @@ filepath = (
 
 bu = 'b2s'
 sheet  = 'b2s_v1'
-
-filter_count_date = pd.Timestamp.now() - pd.Timedelta(days=1)
-filter_count_date = filter_count_date.strftime('%Y%m%d')
-print(f"Start time for filtering data: {filter_count_date}")
 
 src_path = filepath / 'Shared' / 'Checklists_Online' / 'checklist_raw.xlsx'
 
@@ -64,9 +59,6 @@ df = df.astype(dtype_map)
 df.rename(columns={'ID':'id','created':'checkdate','check_date':'cntdate'}, inplace=True)
 
 df = df.sort_values(by='id', ascending=False).drop_duplicates(subset=['stcode', 'cntdate'])
-
-# Filter the DataFrame to include only rows where 'cntdate' is less than or equal to the specified date
-df = df[df['cntdate'] <= filter_count_date]
 
 # Convert checkdate and cntdate to yyyymmdd format
 df['checkdate'] = pd.to_datetime(df['checkdate']).dt.strftime('%Y%m%d')
@@ -117,24 +109,20 @@ df = df.merge(
     on=['bu', 'stcode', 'cntdate'],
     how='left'
 )
+
+# แจ้งสาขา+วันที่ใน Excel ที่ไม่ตรง planall2 (เช่น หน้าร้านใส่วันที่/รหัสสาขาผิด) — ไม่ถูกโหลด
+df_unmatched = (
+    df.loc[df['branch'].isna(), ['stcode', 'cntdate']]
+    .drop_duplicates()
+    .sort_values(['cntdate', 'stcode'])
+)
+if not df_unmatched.empty:
+    print(f"⚠️ ไม่ตรง planall2 {len(df_unmatched)} ชุด (ไม่ถูกโหลด):")
+    print(df_unmatched.to_string(index=False))
+
 df = df[df['branch'].notna()].drop(columns=['branch','id'], errors='ignore')
 
-
-# check recheck from checklist table
-df_checklist = pd.read_sql(
-    text(f"select distinct bu,stcode ,cntdate ,'check' as recheck from checklist WHERE bu = '{bu.upper()}'"),
-    connect_db
-)
-df = df.merge(
-    df_checklist,
-    on=['bu', 'stcode', 'cntdate'],
-    how='left'
-)
-df = df[df['recheck'].isna()].drop(columns=['recheck'], errors='ignore')
-
-# Display the first few rows of the DataFrame
 print(df.shape)
-# Insert data into the checklist table
-df.to_sql('checklist', connect_db, if_exists='append', index=False)
-print(f"✅ Data inserted into the checklist table successfully. Total rows inserted: {len(df)}")
+# แทนที่ทีละชุด (bu + stcode + cntdate) — รันด้วย --dry-run เพื่อดูจำนวนโดยไม่เขียนข้อมูล
+replace_sets(connect_db, df, bu)
 

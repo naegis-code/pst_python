@@ -9,6 +9,7 @@ load_dotenv(find_dotenv())
 
 username = os.getenv('sspwds_user')
 password = os.getenv('sspwds_pass')
+print(f"Username: {username}, Password: {password}")
 
 mkdir = pathlib.Path.home() / 'Documents' / 'soh' / 'wds'
 if not os.path.exists(mkdir):

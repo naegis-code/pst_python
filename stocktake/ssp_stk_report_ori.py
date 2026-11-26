@@ -90,9 +90,22 @@ query_update = text("""
        and cntdate between :sdate and :edate
 """)
 
+query_check = text("""
+    select count(*) from ssp_stk_this_year
+     where phycnt_cst is null
+       and cntdate between :sdate and :edate
+""")
+
+params = {"sdate": sdate, "edate": edate}
 with eng3.begin() as conn:
-    conn.execute(query_update, {"sdate": sdate, "edate": edate})
-    print("✅ Updated phycnt_cst and phycnt_rtl in ssp_stk_this_year where they were null.")
+    # ล้มเหลวทันทีถ้าติดล็อก แทนการค้างเงียบๆ (SET LOCAL มีผลเฉพาะ transaction นี้)
+    conn.execute(text("SET LOCAL lock_timeout = '10s'"))
+    n_null = conn.execute(query_check, params).scalar()
+    if n_null:
+        conn.execute(query_update, params)
+        print(f"✅ Updated phycnt_cst and phycnt_rtl in ssp_stk_this_year ({n_null} rows).")
+    else:
+        print("ℹ️ ไม่มีแถวที่ phycnt_cst เป็น null — ข้ามขั้นตอน UPDATE")
 
 q_report = f"""
                 select store as stcode ,cntdate ,rpname ,skutype ,
